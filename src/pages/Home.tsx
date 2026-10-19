@@ -94,7 +94,10 @@ export function Home() {
             onPathSelect={setSelectedPathId}
           />
           <MapLegend />
-          <p className="map-hint muted small">Tap a road to report a problem or see its reports.</p>
+          <p className="map-hint muted small">
+            Tap a road to report a problem or see its reports, or{' '}
+            <a href="#/report">report an obstacle from a list</a>.
+          </p>
         </div>
       </div>
       <div className="area-result">

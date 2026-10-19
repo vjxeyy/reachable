@@ -2,14 +2,18 @@ import { useEffect, useState } from 'react'
 import { formatDuration } from './components/labels'
 import { Admin } from './pages/Admin'
 import { Home } from './pages/Home'
+import { Report } from './pages/Report'
 import { advanceClock, dismissToast, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
 
-type Page = 'map' | 'admin'
+type Page = 'map' | 'report' | 'admin'
 
 function pageFromHash(): Page {
-  return window.location.hash.startsWith('#/admin') ? 'admin' : 'map'
+  const hash = window.location.hash
+  if (hash.startsWith('#/admin')) return 'admin'
+  if (hash.startsWith('#/report')) return 'report'
+  return 'map'
 }
 
 function usePage(): Page {
@@ -98,6 +102,9 @@ function App() {
           <a href="#/" aria-current={page === 'map' ? 'page' : undefined}>
             Map
           </a>
+          <a href="#/report" aria-current={page === 'report' ? 'page' : undefined}>
+            Report obstacle
+          </a>
           <a href="#/admin" aria-current={page === 'admin' ? 'page' : undefined}>
             Admin
           </a>
@@ -105,7 +112,9 @@ function App() {
         <SourceBadge />
         <DemoControls />
       </header>
-      <main className="main">{page === 'admin' ? <Admin /> : <Home />}</main>
+      <main className="main">
+        {page === 'admin' ? <Admin /> : page === 'report' ? <Report /> : <Home />}
+      </main>
       <Toast />
     </div>
   )

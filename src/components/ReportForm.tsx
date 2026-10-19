@@ -127,10 +127,16 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
           </div>
         ) : (
           <>
-            <label className="btn file-btn">
-              Take or upload a photo
-              <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
-            </label>
+            <div className="row">
+              <label className="btn file-btn">
+                Take photo
+                <input type="file" accept="image/*" capture="environment" onChange={(e) => onFile(e.target.files?.[0])} />
+              </label>
+              <label className="btn btn-ghost file-btn">
+                Upload photo
+                <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
+              </label>
+            </div>
             <p className="muted small">No photo handy? Use a sample drawing:</p>
             <div className="sample-row">
               {SAMPLE_PHOTOS.map((s) => (

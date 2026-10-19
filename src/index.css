@@ -1556,3 +1556,36 @@ textarea {
 .source-local .source-dot {
   background: var(--unverified);
 }
+
+/* ---------- Report page ---------- */
+
+.report-page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 16px;
+}
+.page-title {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+.report-page .panel > p {
+  margin: 0 0 14px;
+}
+.report-where {
+  margin-bottom: 6px;
+}
+.road-facts {
+  margin: 0 0 14px;
+}
+.report-page .report-form {
+  margin-top: 4px;
+}
+.map-hint a {
+  color: var(--primary);
+  font-weight: 600;
+}
+@media (max-width: 640px) {
+  .report-page {
+    padding: 12px;
+  }
+}

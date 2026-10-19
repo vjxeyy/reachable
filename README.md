@@ -11,7 +11,8 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Routes by profile, and by combinations of them.** Wheelchair, Crutches or Low vision, each with its own hard
   rules and penalties (steps, width, slope, path length). Tick more than one (for example Wheelchair and Low vision)
   and the route follows the strictest rule of each: every hard rule applies and the penalties add up.
-- **Photo reports.** Tap a path, add a photo, and the app suggests what the obstacle is. You confirm or correct it.
+- **Photo reports.** Tap a road on the map, or open **Report obstacle** (`#/report`) and pick the road from a list,
+  which is easier on a phone. Take or upload a photo and the app suggests what the obstacle is. You confirm or correct it.
 - **Verification-aware routing.** New reports are *unverified*: routes avoid them whenever another way exists.
   A report blocks a path outright only after 2 independent confirmations or an admin verify.
 - **Fail-safe.** If every path is blocked, the app says **"No verified step-free route"** instead of drawing a
