@@ -195,11 +195,12 @@ scripts/demo-check.mjs   scripted 60-second demo
 - **https://reachable-lemon.vercel.app**: the fast copy on Vercel. The full 60-second demo works, but
   reports stay on each device ("This browser only") and the classifier is the demo one. Only this address is
   public; the project's other `*.vercel.app` aliases are behind Vercel's login.
-- **Render (full app, shared reports)**: deploy it with one click (below). Not deployed yet.
+- **https://reachable-cg26.onrender.com**: the full app on Render, with shared reports (a report made on one
+  device appears on every other). The free plan sleeps when idle, so open it about a minute before presenting.
 
 ## Deploying
 
-**Render: full app, one free web service.** Open
+**Render: full app, one free web service** (already deployed at the address above). To deploy your own copy, open
 https://render.com/deploy?repo=https://github.com/vjxeyy/reachable, sign in with GitHub and click
 **Deploy Blueprint**. `render.yaml` builds with `npm ci && npm run build`, starts with `npm start` and
 checks `/api/health`. On the free plan:
