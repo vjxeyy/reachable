@@ -190,18 +190,35 @@ server/                  Express app, SQLite (db.ts), routes/
 scripts/demo-check.mjs   scripted 60-second demo
 ```
 
-## Deploying (not done yet)
+## Live demo
 
-The app has not been deployed. The simplest option is **one Render web service** that runs both parts:
+- **https://reachable-lemon.vercel.app**: the fast copy on Vercel. The full 60-second demo works, but
+  reports stay on each device ("This browser only") and the classifier is the demo one. Only this address is
+  public; the project's other `*.vercel.app` aliases are behind Vercel's login.
+- **Render (full app, shared reports)**: deploy it with one click (below). Not deployed yet.
 
-- Build command: `npm install && npm run build`. Start command: `npm start`.
-- Add a persistent disk (for example mounted at `/data`) and set `DB_PATH=/data/reachable.db` and
-  `UPLOADS_DIR=/data/uploads`, or data resets on every deploy.
-- Set `ANTHROPIC_API_KEY` in the service's environment if you want the real classifier.
+## Deploying
 
-To host the frontend on Vercel instead, build it with `VITE_API_URL` set to the API's address and set
-`CORS_ORIGIN` on the API to the Vercel address. A frontend deployed without an API still works, in
-"This browser only" mode.
+**Render: full app, one free web service.** Open
+https://render.com/deploy?repo=https://github.com/vjxeyy/reachable, sign in with GitHub and click
+**Deploy Blueprint**. `render.yaml` builds with `npm ci && npm run build`, starts with `npm start` and
+checks `/api/health`. On the free plan:
+
+- It sleeps after 15 minutes without traffic, and the first visit then takes about a minute. Open it a minute
+  before presenting; an open tab keeps it awake.
+- The disk is temporary: reports and photos reset when it restarts or redeploys, and the example reports come
+  back on their own. For lasting data, use a paid plan with a disk and set `DB_PATH` and `UPLOADS_DIR` on it.
+- For the real photo classifier, add `ANTHROPIC_API_KEY` under the service's **Environment** settings.
+  Render restarts it with the key.
+
+Check a deploy with `npm run demo:check -- https://<your-service>.onrender.com`. It resets the demo data there.
+
+**Vercel: frontend only.** The project is linked to the GitHub repo, so every push to `main` redeploys it.
+`vercel.json` sets the install to `npm ci --ignore-scripts` (Vercel doesn't need the native SQLite module),
+the build to `npm run build` and the output to `dist`. With no API at that address, it runs in
+"This browser only" mode. To connect it to a hosted API instead, build with `VITE_API_URL` set to the API and
+set `CORS_ORIGIN` on the API to the Vercel address. Avoid that while the API sleeps, though: when it wakes up,
+the app switches to the server's data mid-demo.
 
 ## What is simulated
 
