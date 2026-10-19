@@ -133,3 +133,12 @@ export function GridIcon({ size = 18 }: IconProps) {
     </svg>
   )
 }
+
+export function PersonIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={1.8}>
+      <circle cx="12" cy="8" r="3.6" />
+      <path d="M4.5 20c.9-3.6 3.8-5.4 7.5-5.4s6.6 1.8 7.5 5.4" />
+    </svg>
+  )
+}

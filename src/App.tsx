@@ -1,19 +1,21 @@
 import { useEffect, useState } from 'react'
-import { FlagIcon, GridIcon, MapIcon } from './components/icons'
+import { FlagIcon, GridIcon, MapIcon, PersonIcon } from './components/icons'
 import { formatDuration } from './components/labels'
 import { Admin } from './pages/Admin'
 import { Home } from './pages/Home'
+import { Login } from './pages/Login'
 import { Report } from './pages/Report'
-import { advanceClock, dismissToast, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
+import { advanceClock, dismissToast, logout, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
 
-type Page = 'map' | 'report' | 'admin'
+type Page = 'map' | 'report' | 'admin' | 'login'
 
 function pageFromHash(): Page {
   const hash = window.location.hash
   if (hash.startsWith('#/admin')) return 'admin'
   if (hash.startsWith('#/report')) return 'report'
+  if (hash.startsWith('#/login')) return 'login'
   return 'map'
 }
 
@@ -39,6 +41,28 @@ function SourceBadge() {
     <span className={`source source-${source}`} title={SOURCE_TEXT[source].title}>
       <span className="source-dot" aria-hidden="true" /> {SOURCE_TEXT[source].label}
     </span>
+  )
+}
+
+/** Top right: Admin opens the login page; once signed in it shows who, with Sign out. */
+function AdminButton({ page }: { page: Page }) {
+  const { source, auth } = useStore()
+  if (source === 'api' && auth.user) {
+    return (
+      <span className="admin-session">
+        <span className="admin-chip" title={auth.user.email}>
+          {auth.user.email}
+        </span>
+        <button type="button" className="btn btn-quiet btn-small" onClick={() => void logout()}>
+          Sign out
+        </button>
+      </span>
+    )
+  }
+  return (
+    <a className="admin-btn" href="#/login" aria-current={page === 'login' ? 'page' : undefined}>
+      <PersonIcon /> Admin
+    </a>
   )
 }
 
@@ -118,10 +142,13 @@ function App() {
             <GridIcon /> Dashboard
           </a>
         </nav>
-        <SourceBadge />
+        <div className="header-tools">
+          <SourceBadge />
+          <AdminButton page={page} />
+        </div>
       </header>
       <main className="main">
-        {page === 'admin' ? <Admin /> : page === 'report' ? <Report /> : <Home />}
+        {page === 'admin' ? <Admin /> : page === 'login' ? <Login /> : page === 'report' ? <Report /> : <Home />}
       </main>
       <DemoFooter />
       <Toast />

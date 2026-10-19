@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { AccessRequests } from '../components/AccessRequests'
 import { CATEGORY_LABEL, STATUS_LABEL } from '../components/labels'
 import { ReportList } from '../components/ReportList'
 import { TrustBadge } from '../components/TrustBadge'
@@ -18,7 +19,52 @@ function routeEffect(report: Report): string {
   return 'Avoided whenever another way exists'
 }
 
+/**
+ * The Dashboard behind its gate. On the shared server only a signed-in owner or approved admin gets in.
+ * With no server there is nothing shared to protect: it opens, with a note.
+ */
 export function Admin() {
+  const { source, auth } = useStore()
+  const needsLogin = source === 'api' && auth.ready && !auth.user
+  useEffect(() => {
+    if (needsLogin) window.location.hash = '#/login'
+  }, [needsLogin])
+
+  if (source === 'connecting' || (source === 'api' && !auth.ready)) {
+    return (
+      <div className="admin">
+        <p className="muted" role="status">
+          Checking the login.
+        </p>
+      </div>
+    )
+  }
+  if (needsLogin) {
+    return (
+      <div className="admin">
+        <p>
+          Sign in to use the Dashboard. <a href="#/login">Go to the login page</a>.
+        </p>
+      </div>
+    )
+  }
+  if (auth.user?.role === 'pending') {
+    return (
+      <div className="admin">
+        <section className="panel">
+          <h1 className="page-title">Waiting for approval</h1>
+          <p>
+            You are signed in as <strong>{auth.user.email}</strong>, but the owner has not approved your account yet.
+            You will see the Dashboard here once they do.
+          </p>
+        </section>
+      </div>
+    )
+  }
+  return <Dashboard owner={auth.user?.role === 'owner'} shared={source === 'api'} />
+}
+
+function Dashboard({ owner, shared }: { owner: boolean; shared: boolean }) {
   const { reports, confirmations } = useStore()
   const now = useNow()
   const [status, setStatus] = useState<ReportStatus | 'all'>('all')
@@ -46,6 +92,13 @@ export function Admin() {
           <p className="muted">Verify reports to make them hard blocks, or resolve them once fixed. Changes reach routes at once.</p>
         </div>
       </header>
+
+      {!shared && (
+        <p className="banner" role="note">
+          No shared server here, so changes only affect reports saved in this browser.
+        </p>
+      )}
+      {owner && <AccessRequests now={now} />}
 
       <section className="stats" aria-label="Summary">
         <Stat label="Affected paths" value={affectedPaths} hint={`of ${campus.paths.length} paths`} />

@@ -11,13 +11,20 @@ import { voteBlockReason } from '../core/trust'
 import type { Category, Confirmation, ProfileId, Report, Severity, Vote } from '../core/types'
 import {
   apiAdmin,
+  apiAuthConfig,
   apiClassify,
   apiCreateReport,
   apiHealth,
+  apiLogin,
+  apiLogout,
+  apiMe,
   apiResetDemo,
+  apiSignup,
   apiSnapshot,
   apiVote,
   isUnreachable,
+  type AuthConfig,
+  type AuthUser,
   type Snapshot,
 } from './api'
 
@@ -48,8 +55,19 @@ export interface Selection {
   to: string
 }
 
+/** Admin login, known only while the shared server is connected. */
+export interface AuthState {
+  /** False until the server has answered. */
+  ready: boolean
+  config: AuthConfig | null
+  user: AuthUser | null
+}
+
+const NO_AUTH: AuthState = { ready: false, config: null, user: null }
+
 export interface StoreState extends Data {
   source: Source
+  auth: AuthState
   /** Demo clock: how far the app's "now" is ahead of real time. */
   timeOffsetMs: number
   /** The route being looked at. In memory only, so it survives switching to Admin and back. */
@@ -125,6 +143,7 @@ let localData: Data = loadLocal()
 let state: StoreState = {
   ...localData,
   source: 'connecting',
+  auth: NO_AUTH,
   timeOffsetMs: loadOffset(),
   selection: EMPTY_SELECTION,
   toast: null,
@@ -148,9 +167,14 @@ const serverClassifier: Classifier = {
 }
 
 function setState(patch: Partial<StoreState>): void {
-  if (patch.source && patch.source !== state.source) setRemoteClassifier(patch.source === 'api' ? serverClassifier : null)
+  const sourceChanged = patch.source !== undefined && patch.source !== state.source
+  if (sourceChanged) setRemoteClassifier(patch.source === 'api' ? serverClassifier : null)
   state = { ...state, ...patch }
   for (const listener of listeners) listener()
+  if (sourceChanged) {
+    if (patch.source === 'api') void loadAuth()
+    else setState({ auth: NO_AUTH })
+  }
 }
 
 export function useStore(): StoreState {
@@ -205,6 +229,68 @@ function switchToServer(snapshot: Snapshot): void {
   const wasLocal = state.source === 'local'
   setState({ source: 'api', reports: snapshot.reports, confirmations: snapshot.confirmations })
   if (wasLocal) notify('Connected to the shared server. Reports are now shared.')
+}
+
+// ---------- Admin login ----------
+
+/** Asks the server who is signed in and how login is set up. */
+export async function loadAuth(): Promise<void> {
+  try {
+    const [config, me] = await Promise.all([apiAuthConfig(), apiMe()])
+    if (state.source === 'api') setState({ auth: { ready: true, config, user: me.user } })
+  } catch {
+    // An older server without login: leave the Dashboard as it was.
+    if (state.source === 'api') setState({ auth: { ready: true, config: { configured: false, signupOpen: false, demo: null }, user: null } })
+  }
+}
+
+/** Refreshes who is signed in (an owner may have approved this person since the page loaded). */
+async function refreshMe(): Promise<void> {
+  if (state.source !== 'api' || !state.auth.ready) return
+  try {
+    const me = await apiMe()
+    if (state.source === 'api' && JSON.stringify(me.user) !== JSON.stringify(state.auth.user)) {
+      setState({ auth: { ...state.auth, user: me.user } })
+    }
+  } catch {
+    // The report sync handles an unreachable server.
+  }
+}
+
+/** Signs in. Returns an error message, or null on success. */
+export async function login(email: string, password: string): Promise<string | null> {
+  try {
+    const { user } = await apiLogin(email, password)
+    setState({ auth: { ...state.auth, ready: true, user } })
+    return null
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Could not sign in.'
+  }
+}
+
+/** Asks for an admin account. The owner has to approve it. Returns an error message, or null on success. */
+export async function signup(email: string, password: string): Promise<string | null> {
+  try {
+    await apiSignup(email, password)
+    return null
+  } catch (error) {
+    return error instanceof Error ? error.message : 'Could not sign up.'
+  }
+}
+
+export async function logout(): Promise<void> {
+  try {
+    await apiLogout()
+  } catch {
+    // Signed out here either way.
+  }
+  setState({ auth: { ...state.auth, user: null } })
+}
+
+/** Turns a refusal into a message and re-checks who is signed in (the session may have ended). */
+function afterRefusal(message: string | null): string | null {
+  if (message) void refreshMe()
+  return message
 }
 
 // ---------- Time ----------
@@ -280,8 +366,12 @@ export function startSync(): () => void {
   const timer = setInterval(() => {
     ticks++
     if (state.source === 'api' || ticks % 3 === 0) void sync()
+    if (ticks % 6 === 0) void refreshMe()
   }, 5000)
-  const onFocus = () => void sync()
+  const onFocus = () => {
+    void sync()
+    void refreshMe()
+  }
   window.addEventListener('focus', onFocus)
   return () => {
     clearInterval(timer)
@@ -433,13 +523,13 @@ export async function castVote(reportId: string, vote: Vote): Promise<string | n
 /** Admin verify: the report becomes `verified` at once and counts as freshly seen. */
 export function adminVerify(reportId: string): Promise<string | null> {
   const at = now()
-  return write((data) => withAdmin(data, reportId, 'verify', at), () => apiAdmin(reportId, 'verify', at))
+  return write((data) => withAdmin(data, reportId, 'verify', at), () => apiAdmin(reportId, 'verify', at)).then(afterRefusal)
 }
 
 /** Admin resolve: the obstacle is fixed, the report is cleared. */
 export function adminResolve(reportId: string): Promise<string | null> {
   const at = now()
-  return write((data) => withAdmin(data, reportId, 'resolve', at), () => apiAdmin(reportId, 'resolve', at))
+  return write((data) => withAdmin(data, reportId, 'resolve', at), () => apiAdmin(reportId, 'resolve', at)).then(afterRefusal)
 }
 
 /**
@@ -447,6 +537,11 @@ export function adminResolve(reportId: string): Promise<string | null> {
  * when it is reachable (so every browser sees the reset), otherwise this browser's copy.
  */
 export async function resetDemo(): Promise<void> {
+  // On the shared server only the owner may wipe every report. Say so before changing anything here.
+  if (state.source === 'api' && state.auth.user?.role !== 'owner') {
+    notify(state.auth.user ? 'Only the owner can reset the demo.' : 'Sign in as the owner to reset the demo.')
+    return
+  }
   writeVersion++
   setOffset(0)
   setState({ selection: EMPTY_SELECTION })

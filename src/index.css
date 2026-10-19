@@ -1580,9 +1580,14 @@ textarea {
 
 /* ---------- Data source badge ---------- */
 
-.source {
+.header-tools {
   grid-area: source;
   justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.source {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1659,4 +1664,133 @@ textarea {
   .page-title {
     font-size: 1.4rem;
   }
+}
+
+/* ---------- Admin button and login ---------- */
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: none;
+}
+.admin-btn:hover,
+.admin-btn[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+.admin-session {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.admin-chip {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+@media (max-width: 700px) {
+  .header-tools {
+    gap: 8px;
+  }
+  .admin-chip {
+    display: none;
+  }
+  .source {
+    font-size: 0.75rem;
+  }
+}
+
+.login-page {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 24px 20px;
+}
+.login-page .panel > p {
+  margin: 0 0 12px;
+}
+.toggle-row {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.login-form {
+  display: grid;
+  gap: 12px;
+}
+.pw-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.pw-row input {
+  flex: 1;
+  min-width: 0;
+}
+.notice {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--primary-soft);
+}
+.demo-login {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.demo-login h2 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+}
+.demo-login dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  margin: 10px 0;
+}
+.demo-login dt {
+  color: var(--muted);
+  font-weight: 600;
+}
+.demo-login dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.banner {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--unverified-soft);
+}
+.access-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.access-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.access-email {
+  overflow-wrap: anywhere;
 }
