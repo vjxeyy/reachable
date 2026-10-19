@@ -12,7 +12,7 @@ describe('mapDecor', () => {
 
   it('puts a good number of trees on the map, inside its edges', () => {
     const { trees } = mapDecor(campus)
-    expect(trees.length).toBeGreaterThanOrEqual(20)
+    expect(trees.length).toBeGreaterThanOrEqual(12)
     for (const t of trees) {
       expect(t.x).toBeGreaterThan(0)
       expect(t.x).toBeLessThan(campus.width)

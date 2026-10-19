@@ -28,7 +28,9 @@ const ROAD_CLEARANCE = 36
 const LABEL_HALF_WIDTH = 95
 const LABEL_ABOVE = 60
 const LABEL_BELOW = 85
-const MAX_TREES = 40
+const MAX_TREES = 26
+/** Trees stay in the margin around the map so the middle, where the roads are, stays calm. */
+const MARGIN_BAND = 120
 const MIN_TREE_GAP = 22
 
 function seedFrom(text: string): number {
@@ -102,6 +104,7 @@ export function mapDecor(campus: Campus): Decor {
     const x = 14 + next() * (campus.width - 28)
     const y = 14 + next() * (campus.height - 28)
     if (insidePond(x, y, pond, 1.2)) continue
+    if (Math.min(x, y, campus.width - x, campus.height - y) > MARGIN_BAND) continue
     if (campus.nodes.some((n) => Math.abs(x - n.x) < LABEL_HALF_WIDTH && y > n.y - LABEL_ABOVE && y < n.y + LABEL_BELOW)) continue
     if (segments.some(([a, b]) => distanceToSegment(x, y, a, b) < ROAD_CLEARANCE + r)) continue
     if (trees.some((t) => Math.hypot(t.x - x, t.y - y) < t.r + r + MIN_TREE_GAP)) continue

@@ -30,9 +30,35 @@ interface Props {
 const PAD = 24
 
 /** Half the height of each kind of place, so its label can sit just clear of it. */
-const HALF_HEIGHT: Record<NodeKind, number> = { building: 26, green: 36, field: 29, lot: 22, gate: 14, stop: 11 }
+const HALF_HEIGHT: Record<NodeKind, number> = { building: 23, green: 32, field: 29, lot: 22, gate: 14, stop: 11 }
 
-function midpoint(a: CampusNode, b: CampusNode) {
+/** Where a place's name is drawn: its lines, the baseline of the first line and the box the text covers. */
+function labelPlacement(node: CampusNode, campus: Campus) {
+  const lines = labelLines(node.name)
+  const half = HALF_HEIGHT[node.kind ?? 'building']
+  const below = node.y < campus.height - 60
+  const firstY = below ? node.y + half + 24 : node.y - half - 10 - (lines.length - 1) * 24
+  const box = {
+    x0: node.x - 62,
+    x1: node.x + 62,
+    y0: firstY - 20,
+    y1: firstY + (lines.length - 1) * 23 + 8,
+  }
+  return { lines, firstY, box }
+}
+
+/**
+ * Where a path's report marker and slope badge go: the middle of the road, slid along it when the
+ * middle would sit on top of a place's name.
+ */
+function roadSpot(a: CampusNode, b: CampusNode, campus: Campus, margin = 16) {
+  const boxes = campus.nodes.map((n) => labelPlacement(n, campus).box)
+  for (const t of [0.5, 0.4, 0.6, 0.33, 0.67]) {
+    const x = a.x + (b.x - a.x) * t
+    const y = a.y + (b.y - a.y) * t
+    const hidden = boxes.some((m) => x > m.x0 - margin && x < m.x1 + margin && y > m.y0 - margin && y < m.y1 + margin)
+    if (!hidden) return { x, y }
+  }
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
 }
 
@@ -71,8 +97,8 @@ function Place({ kind }: { kind: NodeKind }) {
     case 'green':
       return (
         <>
-          <ellipse rx={56} ry={36} className="place-lawn" />
-          <circle r={11} className="place-pool" />
+          <ellipse rx={50} ry={32} className="place-lawn" />
+          <circle r={9} className="place-pool" />
         </>
       )
     case 'field':
@@ -110,8 +136,8 @@ function Place({ kind }: { kind: NodeKind }) {
     default:
       return (
         <>
-          <rect x={-44} y={-26} width={88} height={52} rx={4} className="place-building" />
-          <rect x={-37} y={-19} width={74} height={38} rx={2} className="place-roof" />
+          <rect x={-38} y={-23} width={76} height={46} rx={5} className="place-building" />
+          <rect x={-31} y={-16} width={62} height={32} rx={3} className="place-roof" />
         </>
       )
   }
@@ -144,7 +170,6 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
         <g className="map-trees">
           {decor.trees.map((t) => (
             <g key={`${t.x}-${t.y}`}>
-              <circle cx={t.x + 2} cy={t.y + 3} r={t.r} className="tree-shadow" />
               <circle cx={t.x} cy={t.y} r={t.r} className="tree" />
             </g>
           ))}
@@ -221,7 +246,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
           const b = nodes.get(path.to)
           const badge = badgeText(pathKind(path), path.slopePct, path.widthM)
           if (!a || !b || !badge) return null
-          const mid = midpoint(a, b)
+          const mid = roadSpot(a, b, campus, 4)
           const excluded = hardExclusionReason(prof, path) !== null
           return (
             <text key={path.id} x={mid.x + 14} y={mid.y - 14} className={`path-badge${excluded ? ' path-excluded' : ''}`}>
@@ -237,7 +262,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
           const a = path && nodes.get(path.from)
           const b = path && nodes.get(path.to)
           if (!a || !b) return null
-          const mid = midpoint(a, b)
+          const mid = roadSpot(a, b, campus)
           return (
             <g
               key={marker.pathId}
@@ -254,10 +279,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
 
       <g className="nodes">
         {campus.nodes.map((node) => {
-          const lines = labelLines(node.name)
-          const half = HALF_HEIGHT[node.kind ?? 'building']
-          const below = node.y < campus.height - 60
-          const firstY = below ? node.y + half + 24 : node.y - half - 10 - (lines.length - 1) * 24
+          const { lines, firstY } = labelPlacement(node, campus)
           const role = node.id === from ? 'start' : node.id === to ? 'end' : onRoute.has(node.id) ? 'via' : ''
           return (
             <g key={node.id} className={`node${role ? ` node-${role}` : ''}`}>
