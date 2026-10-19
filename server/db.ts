@@ -52,6 +52,7 @@ function migrate(db: DB): void {
       area_id TEXT NOT NULL, voter_id TEXT NOT NULL, vote TEXT NOT NULL, at INTEGER NOT NULL
     );
     CREATE INDEX IF NOT EXISTS confirmations_report ON confirmations (report_id);
+    CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   `)
 }
 
@@ -198,4 +199,13 @@ export function deleteAreaReports(db: DB, areaId: string): string[] {
     db.prepare('DELETE FROM reports WHERE area_id = ?').run(areaId)
   })()
   return photos.map((p) => p.photo_url)
+}
+
+export function getMeta(db: DB, key: string): string | null {
+  const row = db.prepare('SELECT value FROM meta WHERE key = ?').get(key) as { value: string } | undefined
+  return row?.value ?? null
+}
+
+export function setMeta(db: DB, key: string, value: string): void {
+  db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
 }

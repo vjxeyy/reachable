@@ -14,6 +14,7 @@ import { loadCampus } from '../src/core/graph'
 import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
 import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
+import { demoRouter, seedDemoIfNew } from './routes/demo'
 import { reportsRouter } from './routes/reports'
 import { routeRouter } from './routes/route'
 
@@ -46,6 +47,7 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   app.use('/api', reportsRouter(ctx))
   app.use('/api', routeRouter(ctx))
   app.use('/api', classifyRouter(ctx))
+  app.use('/api', demoRouter(ctx))
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'Not found' })
   })
@@ -104,6 +106,7 @@ function main(): void {
   const campus = loadCampus(campusData)
   const db = openDb(dbPath)
   seedCampus(db, campus)
+  if (seedDemoIfNew(db, campus.areaId)) console.log('Loaded the example reports into a new database.')
   const app = createApp(
     { db, campus, uploadsDir, classifier: serverClassifier(process.env.ANTHROPIC_API_KEY) },
     { staticDir: path.join(root, 'dist'), corsOrigin: process.env.CORS_ORIGIN },

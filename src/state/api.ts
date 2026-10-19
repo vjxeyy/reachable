@@ -88,6 +88,10 @@ export function apiAdmin(reportId: string, action: 'verify' | 'resolve', at: num
   return request('POST', `/api/reports/${encodeURIComponent(reportId)}/${action}`, { at })
 }
 
+export function apiResetDemo(at: number): Promise<Snapshot> {
+  return request('POST', '/api/demo/reset', { at })
+}
+
 export function apiClassify(photo: Blob, fileName: string, context: unknown): Promise<ClassifierResult> {
   const form = new FormData()
   form.append('photo', photo, fileName)

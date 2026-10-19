@@ -12,6 +12,7 @@ import type { RouteResult } from '../src/core/route'
 import type { Report } from '../src/core/types'
 import { DEFAULT_DB_PATH, deleteAreaReports, openDb, seedCampus, type DB } from './db'
 import { createApp, serverClassifier } from './index'
+import { seedDemoIfNew } from './routes/demo'
 
 const campus = loadCampus(campusData)
 let db: DB
@@ -175,5 +176,29 @@ describe('API', () => {
     expect(result.data).toMatchObject({ category: 'blocked_ramp', source: 'simulated' })
     expect(result.data.note).toMatch(/no ANTHROPIC_API_KEY/)
     expect((await api('POST', '/api/classify', new FormData())).status).toBe(400)
+  })
+
+  it('Reset demo deletes all reports and their photos, then restores the example reports', async () => {
+    const form = new FormData()
+    for (const [key, value] of Object.entries(newReport())) form.append(key, String(value))
+    form.append('photo', new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }), 'ramp.jpg')
+    const created = await api<{ report: Report }>('POST', '/api/reports', form)
+    const photoFile = path.basename(created.data.report.photoUrl!)
+    expect(readdirSync(uploadsDir)).toContain(photoFile)
+
+    const reset = await api<{ reports: Report[] }>('POST', '/api/demo/reset', { at: Date.now() })
+    expect(reset.status).toBe(200)
+    expect(reset.data.reports.map((r) => r.id).sort()).toEqual(
+      ['seed-flooding', 'seed-kerb', 'seed-parked-van', 'seed-raised-slabs'],
+    )
+    expect(readdirSync(uploadsDir)).not.toContain(photoFile)
+  })
+
+  it('loads the example reports only once into a new database', () => {
+    const fresh = openDb(':memory:')
+    expect(seedDemoIfNew(fresh, campus.areaId)).toBe(true)
+    expect(seedDemoIfNew(fresh, campus.areaId)).toBe(false)
+    expect(fresh.prepare('SELECT COUNT(*) AS n FROM reports').get()).toEqual({ n: 4 })
+    fresh.close()
   })
 })

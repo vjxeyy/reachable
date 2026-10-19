@@ -3,8 +3,10 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import campusData from '../../data/campus.json'
+import seedData from '../../data/seed-reports.json'
 import { setRemoteClassifier, type Classifier } from '../classifier'
 import { loadCampus } from '../core/graph'
+import { buildSeed, type SeedFile } from '../core/seed'
 import { voteBlockReason } from '../core/trust'
 import type { Category, Confirmation, ProfileId, Report, Severity, Vote } from '../core/types'
 import {
@@ -12,6 +14,7 @@ import {
   apiClassify,
   apiCreateReport,
   apiHealth,
+  apiResetDemo,
   apiSnapshot,
   apiVote,
   isUnreachable,
@@ -23,6 +26,12 @@ export const campus = loadCampus(campusData)
 const DATA_KEY = 'reachable:v1:data'
 const CLIENT_KEY = 'reachable:v1:client'
 const CLOCK_KEY = 'reachable:v1:clock'
+const SEEDED_KEY = 'reachable:v1:seeded'
+
+/** Example reports for a fresh start, timed relative to `now`. */
+function demoSeed(now: number): Data {
+  return buildSeed(seedData as SeedFile, now)
+}
 
 /** Where reports come from: the shared server, or this browser only. */
 export type Source = 'connecting' | 'api' | 'local'
@@ -98,6 +107,13 @@ function loadLocal(): Data {
     } catch {
       // Broken data falls through to an empty store.
     }
+  }
+  // First visit: start with the example reports so the map is not empty.
+  if (!readStorage(SEEDED_KEY)) {
+    const seeded = demoSeed(Date.now())
+    writeStorage(SEEDED_KEY, '1')
+    writeStorage(DATA_KEY, JSON.stringify(seeded))
+    return seeded
   }
   return { reports: [], confirmations: [] }
 }
@@ -423,4 +439,36 @@ export function adminVerify(reportId: string): Promise<string | null> {
 export function adminResolve(reportId: string): Promise<string | null> {
   const at = now()
   return write((data) => withAdmin(data, reportId, 'resolve', at), () => apiAdmin(reportId, 'resolve', at))
+}
+
+/**
+ * Reset demo: example reports back, demo clock back to now, route picker cleared. Uses the server
+ * when it is reachable (so every browser sees the reset), otherwise this browser's copy.
+ */
+export async function resetDemo(): Promise<void> {
+  writeVersion++
+  setOffset(0)
+  setState({ selection: EMPTY_SELECTION })
+  const at = Date.now()
+  try {
+    if (state.source === 'api') {
+      try {
+        show(await apiResetDemo(at))
+        notify('Demo reset. Example reports restored for everyone.')
+        return
+      } catch (error) {
+        if (!isUnreachable(error)) {
+          notify(error instanceof Error ? error.message : 'The server could not reset the demo.')
+          return
+        }
+        fallBackToLocal(demoSeed(at), 'Server unreachable. Demo reset in this browser only.')
+        return
+      }
+    }
+    writeStorage(SEEDED_KEY, '1')
+    saveLocal(demoSeed(at))
+    notify('Demo reset. Example reports restored.')
+  } finally {
+    writeVersion++
+  }
 }

@@ -143,6 +143,20 @@ textarea {
   grid-area: reports;
 }
 
+@media (max-width: 640px) {
+  /* On a phone the header scrolls away so the map gets the screen. */
+  .topbar {
+    position: static;
+    padding: 8px 12px;
+    gap: 6px 10px;
+  }
+  .demo-controls .btn-small {
+    min-height: 32px;
+    padding: 4px 8px;
+    font-size: 0.82rem;
+  }
+}
+
 @media (max-width: 900px) {
   .home {
     grid-template-columns: minmax(0, 1fr);

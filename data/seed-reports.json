@@ -1,0 +1,56 @@
+{
+  "areaId": "ashgrove",
+  "note": "Example reports loaded on first use and by Reset demo. Times are relative to the moment of seeding. None of them touch the Library to Hostel demo route.",
+  "reports": [
+    {
+      "id": "seed-parked-van",
+      "pathId": "p-gate-quad",
+      "category": "parked_vehicle",
+      "severity": "partial",
+      "confidence": 0.88,
+      "aiCategory": "parked_vehicle",
+      "photoUrl": "/samples/parked-vehicle.svg",
+      "description": "Delivery van parked across half the path just inside the gate.",
+      "reportedMinutesAgo": 40,
+      "stillThere": [{ "voterId": "seed-device-2", "minutesAgo": 15 }]
+    },
+    {
+      "id": "seed-flooding",
+      "pathId": "p-sports-lab",
+      "category": "flooding",
+      "severity": "blocked",
+      "confidence": 0.91,
+      "aiCategory": "flooding",
+      "photoUrl": "/samples/flooding.svg",
+      "description": "Storm drain overflowed. Water across the whole path to the Sports Ground.",
+      "reportedMinutesAgo": 120,
+      "adminVerifiedMinutesAgo": 90
+    },
+    {
+      "id": "seed-raised-slabs",
+      "pathId": "p-quad-lecture",
+      "category": "broken_pavement",
+      "severity": "partial",
+      "confidence": 0.74,
+      "aiCategory": "broken_pavement",
+      "photoUrl": null,
+      "description": "Raised paving slabs outside the Lecture Halls entrance.",
+      "reportedMinutesAgo": 7200,
+      "stillThere": [
+        { "voterId": "seed-device-3", "minutesAgo": 2880 },
+        { "voterId": "seed-device-4", "minutesAgo": 1440 }
+      ]
+    },
+    {
+      "id": "seed-kerb",
+      "pathId": "p-parking-auditorium",
+      "category": "missing_kerb_cut",
+      "severity": "blocked",
+      "confidence": 0.5,
+      "aiCategory": null,
+      "photoUrl": null,
+      "description": "No dropped kerb where the path crosses the car park exit.",
+      "reportedMinutesAgo": 14400
+    }
+  ]
+}

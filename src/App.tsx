@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { formatDuration } from './components/labels'
 import { Admin } from './pages/Admin'
 import { Home } from './pages/Home'
-import { advanceClock, dismissToast, resetClock, startSync, useStore, type Source } from './state/store'
+import { advanceClock, dismissToast, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
 
@@ -70,6 +70,15 @@ function DemoControls() {
           Back to now
         </button>
       )}
+      <button
+        type="button"
+        className="btn btn-quiet btn-small"
+        onClick={() => {
+          if (window.confirm('Reset the demo? All reports are removed and the example reports come back.')) void resetDemo()
+        }}
+      >
+        Reset demo
+      </button>
     </div>
   )
 }
