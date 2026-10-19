@@ -91,5 +91,5 @@ export function setRemoteClassifier(classifier: Classifier | null): void {
  */
 export function getClassifier(): Classifier {
   if (!remote) return browserSimulated
-  return withFallback(remote, browserSimulated, { timeoutMs: 9000, failurePrefix: 'Server classifier unavailable' })
+  return withFallback(remote, browserSimulated, { timeoutMs: 13_000, failurePrefix: 'Server classifier unavailable' })
 }

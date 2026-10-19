@@ -11,7 +11,8 @@ import { loadCampus } from '../src/core/graph'
 import type { RouteResult } from '../src/core/route'
 import type { Report } from '../src/core/types'
 import { DEFAULT_DB_PATH, deleteAreaReports, openDb, seedCampus, type DB } from './db'
-import { createApp, serverClassifier } from './index'
+import { buildServerClassifier } from './classifier-config'
+import { createApp } from './index'
 import { seedDemoIfNew } from './routes/demo'
 
 const campus = loadCampus(campusData)
@@ -24,8 +25,8 @@ beforeAll(async () => {
   db = openDb(':memory:')
   seedCampus(db, campus)
   uploadsDir = mkdtempSync(path.join(os.tmpdir(), 'reachable-test-uploads-'))
-  // CLIP is off in tests: the classifier must fall back to the simulated one.
-  const app = createApp({ db, campus, uploadsDir, classifier: serverClassifier(null) })
+  // No real classifier in tests: the classifier must fall back to the simulated one.
+  const app = createApp({ db, campus, uploadsDir, classifier: buildServerClassifier({}, uploadsDir).classifier })
   server = app.listen(0)
   await new Promise<void>((resolve) => server.once('listening', () => resolve()))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
@@ -167,14 +168,14 @@ describe('API', () => {
     expect((await api('GET', '/api/nothing-here')).status).toBe(404)
   })
 
-  it('classifies a photo with the demo classifier when CLIP is off', async () => {
+  it('classifies a photo with the demo classifier when no real model is configured', async () => {
     const form = new FormData()
     form.append('photo', new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }), 'sample-blocked-ramp.jpg')
     form.append('context', JSON.stringify({ stepFree: true, slopePct: 7, widthM: 1.4 }))
     const result = await api<{ category: string; source: string; note: string }>('POST', '/api/classify', form)
     expect(result.status).toBe(200)
     expect(result.data).toMatchObject({ category: 'blocked_ramp', source: 'simulated' })
-    expect(result.data.note).toMatch(/CLASSIFIER=clip/)
+    expect(result.data.note).toMatch(/OPENROUTER_API_KEY/)
     expect((await api('POST', '/api/classify', new FormData())).status).toBe(400)
   })
 

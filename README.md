@@ -91,7 +91,9 @@ All optional. Server variables go in `.env` (git-ignored, never commit it) or th
 
 | Variable | Used by | What it does |
 |---|---|---|
-| `CLASSIFIER` | server | Set to `clip` to use the real photo classifier (CLIP, free, runs on the server; see below). Otherwise the simulated classifier is used and labelled **"AI suggestion (demo)"**. |
+| `OPENROUTER_API_KEY` | server | Turns on the real photo classifier: a free vision model through [OpenRouter](https://openrouter.ai) (free key, see below). Without any real classifier the demo one is used and labelled **"AI suggestion (demo)"**. |
+| `OPENROUTER_MODEL` | server | Optional. Up to three comma-separated OpenRouter model ids to try in order. Default: three free Gemma/Nemotron vision models. |
+| `CLASSIFIER` | server | Optional. `openrouter`, `clip` or `simulated`. Default: OpenRouter if `OPENROUTER_API_KEY` is set, otherwise the demo classifier. `clip` runs CLIP on the server instead (see below). |
 | `MODEL_CACHE_DIR` | server | Where the CLIP model is stored. Default `server/data/models`. |
 | `PORT` | server | API port. Default `8787`. |
 | `DB_PATH` | server | SQLite file. Default `server/data/reachable.db`. |
@@ -99,11 +101,26 @@ All optional. Server variables go in `.env` (git-ignored, never commit it) or th
 | `CORS_ORIGIN` | server | Allowed browser origin if the frontend is hosted elsewhere. Default: any. |
 | `VITE_API_URL` | frontend build | API origin if the frontend is hosted elsewhere (for example on Vercel). Leave empty for same origin. |
 
-### Real photo classifier (CLIP, free)
+### Real photo classifier (free)
 
-Start the server with `CLASSIFIER=clip` and the photo suggestion comes from [CLIP](https://huggingface.co/Xenova/clip-vit-base-patch32),
-an image model that scores the photo against a short description of each category. It needs no API key and no
-account, and the photo never leaves the server.
+Two real options sit behind the same interface. Both always fall back to the demo classifier, so reporting never breaks.
+
+**OpenRouter (works on Render):** a free vision model reads the photo and scores the six categories.
+
+1. Make an account at https://openrouter.ai and create a key (Keys page). The default models are the ones whose id
+   ends in `:free`, so they cost nothing; check OpenRouter's sign-up page for whether it asks for a card.
+2. Locally, put it in `.env` as `OPENROUTER_API_KEY=...` (git-ignored). On Render, add it under the service's
+   **Environment** settings. Never put it in the repo or paste it into a chat.
+3. Restart. The start-up log says `Photo classifier: OpenRouter ...`, and the suggestion label reads
+   *AI suggestion · <model name>* instead of *AI suggestion (demo)*.
+
+- Free models are rate-limited: about 20 requests a minute and **50 a day** without bought credits (1,000 a day
+  after buying 10 credits). Past that, or if a model is slow or down, the app shows the demo suggestion and says why.
+- The photo is sent to OpenRouter and the model's provider. Free models may log or train on what they receive, so
+  use only photos you are happy to share.
+- The first reply can take several seconds. The server waits up to 10 s, then falls back.
+
+**CLIP on your own machine:** no key and no account; the photo never leaves the server.
 
 ```bash
 CLASSIFIER=clip npm run server
@@ -112,15 +129,13 @@ CLASSIFIER=clip npm run server
 On Windows PowerShell: `$env:CLASSIFIER="clip"; npm run server`. Or put `CLASSIFIER=clip` in `.env`.
 
 - The first start downloads the model (about 90 MB) from the public Hugging Face Hub into `server/data/models`.
-  After that it loads from disk in about a second and classifies a photo in about 50 ms.
-- It needs **about 400 to 500 MB of memory**, so it does not fit Render's free plan (512 MB). Use it on your own
-  machine, or a bigger host. Render stays on the demo classifier.
-- The call has a 5-second limit. If CLIP is off, still loading, fails or is too slow, the app falls back to the
-  simulated classifier and says why under the suggestion. The suggestion label then reads
-  *AI suggestion · clip-vit-base-patch32* instead of *AI suggestion (demo)*.
+  After that it loads in about a second and classifies a photo in about 50 ms.
+- It needs **about 400 to 500 MB of memory**, so it does not fit Render's free plan (512 MB).
 - Check it on the three sample photos with `npm run clip:check`.
-- CLIP matches pictures to descriptions; it is less precise than a large vision model. The user always confirms
-  or corrects the category, and the descriptions it matches are in `src/classifier/clip.ts`.
+- CLIP matches pictures to descriptions, so it is less precise than a large vision model. The descriptions it
+  matches are in `src/classifier/clip.ts`.
+
+Either way the user always confirms or corrects the category.
 
 ## The 60-second demo
 
@@ -162,8 +177,8 @@ npm test
 
 78 Vitest tests. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
 tests cover trust and freshness, the demo seed data, the classifiers and the API. Server tests use an
-in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The CLIP
-classifier is tested with a stand-in model, so the tests never download anything or use the network.
+in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The
+real classifiers are tested with stand-ins (a local fake OpenRouter server and a fake CLIP model), so the tests never need a key, a download or the internet.
 
 ## How routing works
 
@@ -194,7 +209,7 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 | POST | `/reports/:id/verify` | | Admin verify |
 | POST | `/reports/:id/resolve` | | Admin resolve |
 | GET | `/route?from=&to=&profile=` | | Route result from `src/core` |
-| POST | `/classify` | multipart: `photo`, `context` | Category suggestion (CLIP or simulated) |
+| POST | `/classify` | multipart: `photo`, `context` | Category suggestion (OpenRouter, CLIP or simulated) |
 | POST | `/demo/reset` | | Restore the example reports |
 
 ## Project structure
@@ -203,7 +218,7 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 data/campus.json         the campus (15 nodes, 26 paths)
 data/seed-reports.json   example reports for a fresh start / Reset demo
 src/core/                routing, profiles, trust, seed builder + tests (no React, no network)
-src/classifier/          interface + fallback (index), simulated, clip (CLIP image model)
+src/classifier/          interface + fallback (index), simulated, openrouter, clip
 src/components/          CampusMap, RoutePanel, ReportForm, ReportList, TrustBadge
 src/pages/               Home (map), Admin
 src/state/               store (localStorage or API), api client
@@ -230,7 +245,7 @@ checks `/api/health`. On the free plan:
   before presenting; an open tab keeps it awake.
 - The disk is temporary: reports and photos reset when it restarts or redeploys, and the example reports come
   back on their own. For lasting data, use a paid plan with a disk and set `DB_PATH` and `UPLOADS_DIR` on it.
-- It uses the demo photo classifier. CLIP needs about 400 to 500 MB of memory, more than this plan has.
+- For a real photo classifier, add `OPENROUTER_API_KEY` under the service's **Environment** settings (free key, see above). Without it the demo classifier is used. CLIP does not fit this plan's memory.
 
 Check a deploy with `npm run demo:check -- https://<your-service>.onrender.com`. It resets the demo data there.
 

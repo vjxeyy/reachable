@@ -7,11 +7,8 @@ import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import campusData from '../data/campus.json'
-import { withFallback, type Classifier } from '../src/classifier'
-import { createClipClassifier } from '../src/classifier/clip'
-import { simulatedClassifier } from '../src/classifier/simulated'
 import { loadCampus } from '../src/core/graph'
-import { createClipRuntime } from './clip-backend'
+import { buildServerClassifier } from './classifier-config'
 import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
 import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
@@ -81,15 +78,6 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   return app
 }
 
-/** Classifier used by /api/classify: CLIP when asked for, always with the simulated fallback. */
-export function serverClassifier(clip: Classifier | null): Classifier {
-  return withFallback(clip, simulatedClassifier, {
-    timeoutMs: 5000,
-    missingNote: 'Demo classifier. Start the server with CLASSIFIER=clip to use the CLIP image model.',
-    failurePrefix: 'CLIP model unavailable',
-  })
-}
-
 function main(): void {
   try {
     process.loadEnvFile(path.join(root, '.env'))
@@ -106,23 +94,21 @@ function main(): void {
   const db = openDb(dbPath)
   seedCampus(db, campus)
   if (seedDemoIfNew(db, campus.areaId)) console.log('Loaded the example reports into a new database.')
-  let clip: Classifier | null = null
-  if (process.env.CLASSIFIER?.toLowerCase() === 'clip') {
-    const runtime = createClipRuntime(process.env.MODEL_CACHE_DIR ?? path.join(path.dirname(dbPath), 'models'))
-    clip = createClipClassifier(runtime)
+  const chosen = buildServerClassifier(process.env, path.join(path.dirname(dbPath), 'models'))
+  if (chosen.clipRuntime) {
     const started = Date.now()
-    runtime.warmUp().then(
+    chosen.clipRuntime.warmUp().then(
       () => console.log(`CLIP model ready in ${((Date.now() - started) / 1000).toFixed(1)} s`),
       (error: unknown) => console.error('CLIP model could not load; using the demo classifier:', error instanceof Error ? error.message : error),
     )
   }
   const app = createApp(
-    { db, campus, uploadsDir, classifier: serverClassifier(clip) },
+    { db, campus, uploadsDir, classifier: chosen.classifier },
     { staticDir: path.join(root, 'dist'), corsOrigin: process.env.CORS_ORIGIN },
   )
   app.listen(port, () => {
     console.log(`REACHABLE API on http://localhost:${port}  (database: ${path.relative(root, dbPath)})`)
-    console.log(clip ? 'Photo classifier: CLIP (loading; falls back to the demo classifier)' : 'Photo classifier: simulated (set CLASSIFIER=clip for CLIP)')
+    console.log(chosen.description)
   })
 }
 

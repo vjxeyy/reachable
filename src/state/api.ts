@@ -96,7 +96,7 @@ export function apiClassify(photo: Blob, fileName: string, context: unknown): Pr
   const form = new FormData()
   form.append('photo', photo, fileName)
   if (context) form.append('context', JSON.stringify(context))
-  return request('POST', '/api/classify', form, 9000)
+  return request('POST', '/api/classify', form, 13_000)
 }
 
 /** Server photo paths need the API origin when the frontend is hosted elsewhere. */

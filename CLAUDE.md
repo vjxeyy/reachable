@@ -103,9 +103,10 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
 - The acceptance checks must pass before any UI work starts.
 - Label simulated classifier output on screen as **"AI suggestion (demo)"**. The user always confirms or corrects it.
 - Do not claim a route is accessible. Show report status and age. An uncertain route is never shown as the route.
-- Real classifier: behind the same interface as the simulated one. It is CLIP, run locally on the server, so
-  there is no API key. It is off unless `CLASSIFIER=clip` is set. If it is off, still loading, fails or takes more
-  than 5 s, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or any key.
+- Real classifier: behind the same interface as the simulated one, chosen from env in `server/classifier-config.ts`:
+  OpenRouter free vision model when `OPENROUTER_API_KEY` is set (or `CLASSIFIER=openrouter`), CLIP when
+  `CLASSIFIER=clip`, else the simulated classifier. Keys come only from env vars. If the real model is off, fails,
+  is still loading or is too slow, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or a key.
 - The app must work with no backend (localStorage store) and switch to the API when it is reachable.
 - Demo support: 3 or 4 pre-seeded reports, a "Reset demo" button, and a "+6 hours" time control.
 - Must be usable at phone width (about 360 px).
@@ -152,13 +153,16 @@ Write each decision down here when it is made, so later phases stay consistent.
 12. **Store sync**: the browser uses the API when `/api/health` answers, polls every 5 s, and falls back to
     localStorage (keeping the last server snapshot) when the server is unreachable. It re-checks every 15 s.
     Reports made offline stay in that browser; they are not uploaded later.
-13. **Real classifier** (`src/classifier/clip.ts` + `server/clip-backend.ts`): CLIP zero-shot
-    (`Xenova/clip-vit-base-patch32`, quantised, via `@huggingface/transformers`), run on the server only
-    (`POST /api/classify`) and only when `CLASSIFIER=clip`. One text description per category (`CLIP_LABELS`);
-    the scores are normalised to sum to 1. The model downloads once (about 90 MB, public Hub, no token) and needs
-    about 400 to 500 MB of memory, so Render's free plan stays on the simulated classifier. `withFallback` gives the
-    simulated answer plus a note when CLIP is off, still loading, fails or takes more than 5 s. The browser calls the
-    server while it is reachable and uses the simulated classifier locally otherwise. Simulated output is always
-    labelled "AI suggestion (demo)".
-    History: a Claude vision classifier (needs a paid API key) and a hosted Hugging Face CLIP were considered and
-    dropped; Hugging Face's hosted service serves no CLIP model and has no free credits.
+13. **Real classifiers** (`src/classifier/openrouter.ts`, `src/classifier/clip.ts`, `server/classifier-config.ts`),
+    server only (`POST /api/classify`), always wrapped in `withFallback` so the app never breaks:
+    - **OpenRouter** (works on Render): `fetch` to `/chat/completions` with the photo as a base64 data URL and a prompt
+      asking for one JSON score per category; `models` lists up to three free vision models (default Gemma 4 26B and 31B,
+      Nemotron VL, all `:free`), temperature 0. Scores are normalised to sum to 1. Free limits: about 20 requests/min and
+      50/day without bought credits. 9 s request limit, 10 s fallback limit (browser waits 13 s). Verified only against a
+      local stand-in server; never called live in this build because no key was available.
+    - **CLIP** (`CLASSIFIER=clip`): `Xenova/clip-vit-base-patch32` via `@huggingface/transformers`, one text description per
+      category. Needs about 400-500 MB of memory, so local machines only. Verified live on the sample photos
+      (`npm run clip:check`). Loaded lazily, so a server that does not use it never loads it.
+    The simulated classifier is always labelled "AI suggestion (demo)".
+    History: a Claude vision classifier (needs a paid key) and hosted Hugging Face CLIP were considered and dropped;
+    Hugging Face's hosted service serves no CLIP model and gives free accounts no credits.
