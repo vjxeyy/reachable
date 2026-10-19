@@ -235,7 +235,7 @@ scripts/demo-check.mjs   scripted 60-second demo
 
 ## Live demo
 
-- **https://reachable-maps.vercel.app**: the fast copy on Vercel. The full 60-second demo works, but
+- **https://reachable-app.vercel.app**: the fast copy on Vercel. The full 60-second demo works, but
   reports stay on each device ("This browser only") and the classifier is the demo one. Only this address is
   public; the project's other `*.vercel.app` aliases are behind Vercel's login.
 - **https://reachable-app.onrender.com**: the full app on Render, with shared reports (a report made on one
