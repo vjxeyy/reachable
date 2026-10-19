@@ -37,6 +37,12 @@ reachable/
   uploads/                  uploaded photos (git-ignored)
 ```
 
+## Commands
+
+`npm run dev` (frontend, :5173) · `npm run server` (API, :8787) · `npm test` · `npm run build` ·
+`npm start` (built app + API on :8787) · `npm run demo:check` (scripted 60-second demo against a running API) ·
+`npm run lint`
+
 ## Data model (PLAN.md section 5)
 
 - **Node**: `id, name, x, y, areaId`

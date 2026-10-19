@@ -1,8 +1,12 @@
 {
   "name": "reachable",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "REACHABLE: a live campus accessibility map with verification-aware routing",
   "type": "module",
+  "engines": {
+    "node": ">=22.12"
+  },
   "scripts": {
     "dev": "vite",
     "dev:lan": "vite --host",
@@ -12,7 +16,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "demo:check": "node scripts/demo-check.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
