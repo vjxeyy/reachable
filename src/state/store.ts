@@ -3,10 +3,20 @@
 
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import campusData from '../../data/campus.json'
+import { setRemoteClassifier, type Classifier } from '../classifier'
 import { loadCampus } from '../core/graph'
 import { voteBlockReason } from '../core/trust'
 import type { Category, Confirmation, ProfileId, Report, Severity, Vote } from '../core/types'
-import { apiAdmin, apiCreateReport, apiHealth, apiSnapshot, apiVote, isUnreachable, type Snapshot } from './api'
+import {
+  apiAdmin,
+  apiClassify,
+  apiCreateReport,
+  apiHealth,
+  apiSnapshot,
+  apiVote,
+  isUnreachable,
+  type Snapshot,
+} from './api'
 
 export const campus = loadCampus(campusData)
 
@@ -113,7 +123,15 @@ export function getState(): StoreState {
   return state
 }
 
+/** Photos go to the server's classifier (real model when it has a key) while the server is reachable. */
+const serverClassifier: Classifier = {
+  name: 'server',
+  classify: (input) =>
+    apiClassify(new Blob([input.image as Uint8Array<ArrayBuffer>], { type: input.mimeType }), input.fileName ?? 'photo.jpg', input.context),
+}
+
 function setState(patch: Partial<StoreState>): void {
+  if (patch.source && patch.source !== state.source) setRemoteClassifier(patch.source === 'api' ? serverClassifier : null)
   state = { ...state, ...patch }
   for (const listener of listeners) listener()
 }

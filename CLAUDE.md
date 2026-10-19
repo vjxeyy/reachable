@@ -146,3 +146,9 @@ Write each decision down here when it is made, so later phases stay consistent.
 12. **Store sync**: the browser uses the API when `/api/health` answers, polls every 5 s, and falls back to
     localStorage (keeping the last server snapshot) when the server is unreachable. It re-checks every 15 s.
     Reports made offline stay in that browser; they are not uploaded later.
+13. **Real classifier** (`src/classifier/real.ts`): Claude vision, `claude-haiku-5-5`, effort `low`, structured
+    output with one score per category (normalised to sum to 1). Runs only on the server (`POST /api/classify`),
+    with the key from `ANTHROPIC_API_KEY`, no SDK retries and a 5 s timeout. `withFallback` returns the
+    simulated answer with a note when the key is missing, the call fails or it is slow. The browser calls the
+    server while it is reachable and uses the simulated classifier locally otherwise. Simulated output is
+    always labelled "AI suggestion (demo)".

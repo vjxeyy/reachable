@@ -7,9 +7,12 @@ import { existsSync, mkdirSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import campusData from '../data/campus.json'
+import { withFallback, type Classifier } from '../src/classifier'
+import { createRealClassifier } from '../src/classifier/real'
 import { simulatedClassifier } from '../src/classifier/simulated'
 import { loadCampus } from '../src/core/graph'
 import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
+import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
 import { reportsRouter } from './routes/reports'
 import { routeRouter } from './routes/route'
@@ -42,6 +45,7 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   })
   app.use('/api', reportsRouter(ctx))
   app.use('/api', routeRouter(ctx))
+  app.use('/api', classifyRouter(ctx))
   app.use('/api', (_req, res) => {
     res.status(404).json({ error: 'Not found' })
   })
@@ -74,6 +78,17 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   return app
 }
 
+/** Classifier used by /api/classify: the real model when a key is set, always with the simulated fallback. */
+export function serverClassifier(apiKey: string | undefined): Classifier {
+  const key = apiKey?.trim()
+  const real = key ? createRealClassifier({ apiKey: key, timeoutMs: 5000 }) : null
+  return withFallback(real, simulatedClassifier, {
+    timeoutMs: 5000,
+    missingNote: 'Demo classifier: the server has no ANTHROPIC_API_KEY set.',
+    failurePrefix: 'Real model unavailable',
+  })
+}
+
 function main(): void {
   try {
     process.loadEnvFile(path.join(root, '.env'))
@@ -90,11 +105,12 @@ function main(): void {
   const db = openDb(dbPath)
   seedCampus(db, campus)
   const app = createApp(
-    { db, campus, uploadsDir, classifier: simulatedClassifier },
+    { db, campus, uploadsDir, classifier: serverClassifier(process.env.ANTHROPIC_API_KEY) },
     { staticDir: path.join(root, 'dist'), corsOrigin: process.env.CORS_ORIGIN },
   )
   app.listen(port, () => {
     console.log(`REACHABLE API on http://localhost:${port}  (database: ${path.relative(root, dbPath)})`)
+    console.log(process.env.ANTHROPIC_API_KEY ? 'Photo classifier: Claude (falls back to simulated)' : 'Photo classifier: simulated (no ANTHROPIC_API_KEY)')
   })
 }
 
