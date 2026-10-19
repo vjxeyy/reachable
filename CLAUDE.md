@@ -145,11 +145,12 @@ Write each decision down here when it is made, so later phases stay consistent.
 6. **Freshness**: `lastConfirmedAt` = the latest of the report, a `still_there` vote and an admin verify.
    A verified report also goes outdated if nobody re-confirms it within its decay time.
 7. **Clearing**: one `cleared` vote or an admin resolve clears a report immediately (Phase 4 needs instant
-   restore). Cleared is final; a returning obstacle is filed as a new report. Exception (user decision): a report whose
-   derived status is `verified` (by an admin or by 2 confirmations) is a hard block, so only the signed-in admin may clear it
-   (`ADMIN_ONLY_CLEAR` in `trust.ts`, checked by the server and the browser). Unverified and outdated reports stay clearable by
-   anyone, and Still there stays open to everyone. Two anonymous browsers cannot be told apart from two people, which is why
-   the crowd cannot lift a verified block. With no server the browser's own data is not protected.
+   restore). Cleared is final; a returning obstacle is filed as a new report. Override (user decision): on the shared
+   server only the signed-in admin may clear ANY report, unverified or verified (`ADMIN_ONLY_CLEAR` in `trust.ts`, checked by the
+   server with a 403 and by the browser, which hides the Cleared button from everyone else). Still there stays open to
+   everyone. Two anonymous browsers cannot be told apart from two people, so the crowd cannot be trusted to lift a block.
+   With no server the data is the visitor's own browser copy, so Cleared stays open there (this is what keeps the demo on
+   Vercel working).
 8. **Confidence shown** = `1 - (1 - aiConfidence) * 0.5^confirmations`, and 1 after an admin verify.
    Status depends only on counts and age, as written in the plan.
 9. **Why a route changed**: the core also computes the "usual" route (same profile, no reports). If the route

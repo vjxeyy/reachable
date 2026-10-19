@@ -26,7 +26,7 @@ function markersFor(reports: Report[]): MapMarker[] {
 }
 
 export function Home() {
-  const { selection } = useStore()
+  const { selection, source, auth } = useStore()
   const { profiles, from, to } = selection
   const { reports, confirmations, now, live, visible, renderStatus, renderActions } = useReportViews()
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
@@ -97,6 +97,9 @@ export function Home() {
       <div className="area-reports">
         <section className="panel" aria-labelledby="reports-heading">
           <h2 id="reports-heading">Live reports</h2>
+          {source === 'api' && !auth.user && (
+            <p className="muted small reports-note">Anyone can confirm a report. Only the admin can mark one cleared.</p>
+          )}
           <ReportList
             campus={campus}
             reports={visible}

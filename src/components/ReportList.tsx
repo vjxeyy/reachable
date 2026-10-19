@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { describePath } from '../core/graph'
 import { SEED_REPORTER } from '../core/seed'
+import { ADMIN_ONLY_CLEAR } from '../core/trust'
 import type { Campus, Report } from '../core/types'
 import { photoSrc } from '../state/api'
 import { CATEGORY_LABEL, formatAgo, STATUS_LABEL } from './labels'
@@ -92,16 +93,19 @@ export function VoteButtons({ report, blockedReason, onVote }: VoteProps) {
       >
         Still there
       </button>
-      <button
-        type="button"
-        className="btn btn-good btn-small"
-        disabled={clearReason !== null}
-        title={clearReason ?? 'Mark the obstacle as gone'}
-        onClick={() => onVote('cleared')}
-      >
-        Cleared
-      </button>
-      {(clearReason ?? stillReason) && <span className="muted small vote-note">{clearReason ?? stillReason}</span>}
+      {/* Only the admin can clear a report, so everyone else does not get the button at all. */}
+      {clearReason !== ADMIN_ONLY_CLEAR && (
+        <button
+          type="button"
+          className="btn btn-good btn-small"
+          disabled={clearReason !== null}
+          title={clearReason ?? 'Mark the obstacle as gone'}
+          onClick={() => onVote('cleared')}
+        >
+          Cleared
+        </button>
+      )}
+      {stillReason && <span className="muted small vote-note">{stillReason}</span>}
     </>
   )
 }

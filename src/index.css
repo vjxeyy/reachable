@@ -1732,6 +1732,9 @@ textarea {
   flex: 1;
   min-width: 0;
 }
+.reports-note {
+  margin: 0 0 12px;
+}
 .banner a {
   color: var(--primary);
   font-weight: 600;

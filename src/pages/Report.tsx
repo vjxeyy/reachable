@@ -13,7 +13,7 @@ import { useReportViews } from './reportViews'
  */
 export function Report() {
   const [pathId, setPathId] = useState('')
-  const { selection } = useStore()
+  const { selection, source, auth } = useStore()
   const { reports, confirmations, now, visible, renderStatus, renderActions } = useReportViews()
 
   const roads = useMemo(
@@ -94,7 +94,11 @@ export function Report() {
 
         <section className="panel report-feed" aria-labelledby="feed-heading">
           <h2 id="feed-heading">Recent reports</h2>
-          <p className="muted small">Confirm a report that is still there, or mark it cleared once the way is open.</p>
+          <p className="muted small">
+            {source === 'api' && !auth.user
+              ? 'Confirm a report that is still there. Only the admin can mark one cleared.'
+              : 'Confirm a report that is still there, or mark it cleared once the way is open.'}
+          </p>
           <ReportList
             campus={campus}
             reports={visible}

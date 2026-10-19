@@ -121,29 +121,32 @@ describe('voting rules', () => {
     expect(lastConfirmedAt(report(), [own])).toBe(NOW - HOUR)
   })
 
-  it('anyone, including the reporter, can mark an unverified report cleared', () => {
-    expect(voteBlockReason(report(), [], 'reporter', 'cleared', NOW)).toBeNull()
-    expect(voteBlockReason(report(), [], 'a', 'cleared', NOW)).toBeNull()
-  })
-
-  it('only the admin can clear a verified block, however it became verified', () => {
+  it('only the admin can clear a report, whatever its status', () => {
     const byAdmin = report({ adminVerifiedAt: NOW - HOUR })
     const byCrowd = [vote('a', 'still_there', NOW - HOUR), vote('b', 'still_there', NOW - HOUR)]
-    expect(deriveStatus(byAdmin, [], NOW)).toBe('verified')
-    expect(deriveStatus(report(), byCrowd, NOW)).toBe('verified')
-    expect(voteBlockReason(byAdmin, [], 'a', 'cleared', NOW)).toBe(ADMIN_ONLY_CLEAR)
-    expect(voteBlockReason(report(), byCrowd, 'c', 'cleared', NOW)).toBe(ADMIN_ONLY_CLEAR)
-    expect(voteBlockReason(report(), byCrowd, 'a', 'cleared', NOW)).toBe(ADMIN_ONLY_CLEAR)
-    expect(voteBlockReason(byAdmin, [], 'a', 'cleared', NOW, true)).toBeNull()
-    expect(voteBlockReason(report(), byCrowd, 'c', 'cleared', NOW, true)).toBeNull()
-  })
-
-  it('anyone can clear a verified report once it is outdated, and Still there stays open to everyone', () => {
     const old = NOW - 400 * 24 * HOUR
     const stale = report({ createdAt: old, lastConfirmedAt: old, adminVerifiedAt: old })
+    expect(deriveStatus(report(), [], NOW)).toBe('unverified')
+    expect(deriveStatus(byAdmin, [], NOW)).toBe('verified')
+    expect(deriveStatus(report(), byCrowd, NOW)).toBe('verified')
     expect(deriveStatus(stale, [], NOW)).toBe('outdated')
-    expect(voteBlockReason(stale, [], 'a', 'cleared', NOW)).toBeNull()
+    for (const [r, votes] of [
+      [report(), []],
+      [byAdmin, []],
+      [report(), byCrowd],
+      [stale, []],
+    ] as const) {
+      // Not the reporter, not the people who confirmed it, nobody else either.
+      for (const who of ['reporter', 'a', 'c']) {
+        expect(voteBlockReason(r, votes, who, 'cleared', NOW)).toBe(ADMIN_ONLY_CLEAR)
+      }
+      expect(voteBlockReason(r, votes, 'c', 'cleared', NOW, true)).toBeNull()
+    }
+  })
+
+  it('Still there stays open to everyone, and a cleared report cannot be cleared again', () => {
     expect(voteBlockReason(report({ adminVerifiedAt: NOW - HOUR }), [], 'a', 'still_there', NOW)).toBeNull()
+    expect(voteBlockReason(report({ clearedAt: NOW }), [], 'a', 'cleared', NOW, true)).toMatch(/already cleared/)
   })
 
   it('a device can re-confirm only after the cool-down', () => {

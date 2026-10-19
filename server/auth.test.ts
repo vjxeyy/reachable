@@ -186,24 +186,25 @@ describe('what needs the owner', () => {
 describe('clearing reports', () => {
   const clear = (id: string, cookie?: string | null) => call('POST', `/api/reports/${id}/clear`, { voterId: 'a-passer-by' }, cookie)
 
-  it('lets anyone clear an unverified report with one press', async () => {
-    await call('POST', '/api/demo/reset', {}, await owner())
-    expect((await clear('seed-kerb')).status).toBe(200)
-  })
-
-  it('keeps verified blocks for the admin, whether an admin or two people verified them', async () => {
+  it('keeps clearing for the admin, for unverified, outdated and verified reports alike', async () => {
     const cookie = await owner()
     await call('POST', '/api/demo/reset', {}, cookie)
-    // seed-flooding was verified by an admin, seed-raised-slabs by two confirmations.
-    const byAdmin = await clear('seed-flooding')
-    expect(byAdmin.status).toBe(403)
-    expect(JSON.stringify(byAdmin.data)).toMatch(/Only the admin/)
-    expect((await clear('seed-raised-slabs')).status).toBe(403)
+    // seed-kerb is unverified, seed-flooding was verified by an admin, seed-raised-slabs by two confirmations.
+    for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) {
+      const refused = await clear(id)
+      expect(refused.status).toBe(403)
+      expect(JSON.stringify(refused.data)).toMatch(/Only the admin/)
+    }
     // Still there is open to everyone.
     expect((await call('POST', '/api/reports/seed-flooding/confirm', { voterId: 'a-passer-by' })).status).toBe(200)
-    // The signed-in admin can clear it.
-    expect((await clear('seed-flooding', cookie)).status).toBe(200)
-    expect((await clear('seed-raised-slabs', cookie)).status).toBe(200)
+    // The signed-in admin can clear them.
+    for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) expect((await clear(id, cookie)).status).toBe(200)
+  })
+
+  it('does not let the owner login of a different server clear anything', async () => {
+    await call('POST', '/api/demo/reset', {}, await owner())
+    const forged = createAuth({ ...ownerConfig, sessionSecret: 'another-secret' }, () => now).sign(OWNER.email.toLowerCase())
+    expect((await clear('seed-kerb', `reachable_session=${forged}`)).status).toBe(403)
   })
 })
 

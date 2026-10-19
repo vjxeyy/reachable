@@ -108,13 +108,13 @@ export function withDerivedStatus(
   return reports.map((r) => ({ ...r, status: deriveStatus(r, confirmations, now) }))
 }
 
-/** Shown when someone other than the admin tries to clear a verified block. */
-export const ADMIN_ONLY_CLEAR = 'Only the admin can clear a verified block. Press Still there if it is still blocked.'
+/** Shown when someone other than the admin tries to clear a report. */
+export const ADMIN_ONLY_CLEAR = 'Only the admin can clear a report. Press Still there if the obstacle is still there.'
 
 /**
  * Why this device may not cast this vote right now, or null if it may.
- * A verified report is a hard block that routes depend on, and one anonymous press must not lift it, so only
- * the admin may clear it (`isAdmin`). Anyone may clear an unverified or outdated report.
+ * Clearing a report changes the routes everyone sees, and anonymous browsers cannot be told apart from
+ * each other, so only the admin may clear a report (`isAdmin`), whatever its status. Anyone may confirm one.
  */
 export function voteBlockReason(
   report: Report,
@@ -125,9 +125,7 @@ export function voteBlockReason(
   isAdmin = false,
 ): string | null {
   if (clearedAt(report, confirmations) !== null) return 'This report is already cleared.'
-  if (vote === 'cleared') {
-    return !isAdmin && deriveStatus(report, confirmations, now) === 'verified' ? ADMIN_ONLY_CLEAR : null
-  }
+  if (vote === 'cleared') return isAdmin ? null : ADMIN_ONLY_CLEAR
   if (voterId === report.reporterId) return 'You reported this. Someone else needs to confirm it.'
   const mine = votesFor(report, confirmations).filter((c) => c.voterId === voterId && c.vote === 'still_there')
   const latest = Math.max(-Infinity, ...mine.map((c) => c.at))
