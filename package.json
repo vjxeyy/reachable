@@ -17,17 +17,17 @@
     "test:watch": "vitest",
     "lint": "oxlint",
     "preview": "vite preview",
-    "demo:check": "node scripts/demo-check.mjs"
+    "demo:check": "node scripts/demo-check.mjs",
+    "clip:check": "tsx scripts/clip-check.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.135.0",
+    "@huggingface/transformers": "^4.3.1",
     "better-sqlite3": "^13.0.3",
     "express": "^5.3.0",
     "multer": "^2.4.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "tsx": "^4.23.15",
-    "zod": "^4.6.7"
+    "tsx": "^4.23.15"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^9.6.0",
@@ -38,12 +38,15 @@
     "@types/react-dom": "^19.2.7",
     "@vitejs/plugin-react": "^6.1.1",
     "oxlint": "^1.81.0",
+    "sharp": "^0.35.5",
     "typescript": "~6.0.2",
     "vite": "^8.3.0",
     "vitest": "^5.0.5"
   },
   "allowScripts": {
     "better-sqlite3@13.0.3": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "onnxruntime-node@1.30.0": true,
+    "protobufjs@7.6.6": true
   }
 }

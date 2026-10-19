@@ -19,5 +19,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["server", "src/core", "src/classifier"]
+  "include": ["server", "scripts/clip-check.ts", "src/core", "src/classifier"]
 }

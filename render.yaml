@@ -7,7 +7,7 @@
 # - The disk is temporary: the database and uploaded photos reset when the service restarts or
 #   redeploys. The example reports load again automatically. For lasting data, use a paid plan with a
 #   disk and set DB_PATH and UPLOADS_DIR to paths on it.
-# - To use the real photo classifier, add ANTHROPIC_API_KEY under the service's Environment settings.
+# - The photo classifier stays on the demo one here: CLIP needs about 400-500 MB of memory, more than this plan has.
 services:
   - type: web
     name: reachable
@@ -21,3 +21,6 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "24"
+      # Skip onnxruntime's optional GPU downloads during install; CLIP is off on this plan anyway.
+      - key: ONNXRUNTIME_NODE_INSTALL
+        value: skip

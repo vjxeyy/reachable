@@ -103,9 +103,9 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
 - The acceptance checks must pass before any UI work starts.
 - Label simulated classifier output on screen as **"AI suggestion (demo)"**. The user always confirms or corrects it.
 - Do not claim a route is accessible. Show report status and age. An uncertain route is never shown as the route.
-- Real classifier: behind the same interface as the simulated one. Read the API key from an environment variable.
-  If the key is missing, the call fails or it takes more than 5 s, fall back to the simulated classifier.
-  Keep `.env.example`, never commit `.env` or a key.
+- Real classifier: behind the same interface as the simulated one. It is CLIP, run locally on the server, so
+  there is no API key. It is off unless `CLASSIFIER=clip` is set. If it is off, still loading, fails or takes more
+  than 5 s, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or any key.
 - The app must work with no backend (localStorage store) and switch to the API when it is reachable.
 - Demo support: 3 or 4 pre-seeded reports, a "Reset demo" button, and a "+6 hours" time control.
 - Must be usable at phone width (about 360 px).
@@ -152,9 +152,13 @@ Write each decision down here when it is made, so later phases stay consistent.
 12. **Store sync**: the browser uses the API when `/api/health` answers, polls every 5 s, and falls back to
     localStorage (keeping the last server snapshot) when the server is unreachable. It re-checks every 15 s.
     Reports made offline stay in that browser; they are not uploaded later.
-13. **Real classifier** (`src/classifier/real.ts`): Claude vision, `claude-haiku-5-5`, effort `low`, structured
-    output with one score per category (normalised to sum to 1). Runs only on the server (`POST /api/classify`),
-    with the key from `ANTHROPIC_API_KEY`, no SDK retries and a 5 s timeout. `withFallback` returns the
-    simulated answer with a note when the key is missing, the call fails or it is slow. The browser calls the
-    server while it is reachable and uses the simulated classifier locally otherwise. Simulated output is
-    always labelled "AI suggestion (demo)".
+13. **Real classifier** (`src/classifier/clip.ts` + `server/clip-backend.ts`): CLIP zero-shot
+    (`Xenova/clip-vit-base-patch32`, quantised, via `@huggingface/transformers`), run on the server only
+    (`POST /api/classify`) and only when `CLASSIFIER=clip`. One text description per category (`CLIP_LABELS`);
+    the scores are normalised to sum to 1. The model downloads once (about 90 MB, public Hub, no token) and needs
+    about 400 to 500 MB of memory, so Render's free plan stays on the simulated classifier. `withFallback` gives the
+    simulated answer plus a note when CLIP is off, still loading, fails or takes more than 5 s. The browser calls the
+    server while it is reachable and uses the simulated classifier locally otherwise. Simulated output is always
+    labelled "AI suggestion (demo)".
+    History: a Claude vision classifier (needs a paid API key) and a hosted Hugging Face CLIP were considered and
+    dropped; Hugging Face's hosted service serves no CLIP model and has no free credits.

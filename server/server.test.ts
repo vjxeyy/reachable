@@ -24,8 +24,8 @@ beforeAll(async () => {
   db = openDb(':memory:')
   seedCampus(db, campus)
   uploadsDir = mkdtempSync(path.join(os.tmpdir(), 'reachable-test-uploads-'))
-  // No API key in tests: the classifier must fall back to the simulated one.
-  const app = createApp({ db, campus, uploadsDir, classifier: serverClassifier(undefined) })
+  // CLIP is off in tests: the classifier must fall back to the simulated one.
+  const app = createApp({ db, campus, uploadsDir, classifier: serverClassifier(null) })
   server = app.listen(0)
   await new Promise<void>((resolve) => server.once('listening', () => resolve()))
   base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`
@@ -167,14 +167,14 @@ describe('API', () => {
     expect((await api('GET', '/api/nothing-here')).status).toBe(404)
   })
 
-  it('classifies a photo with the simulated fallback when no API key is set', async () => {
+  it('classifies a photo with the demo classifier when CLIP is off', async () => {
     const form = new FormData()
     form.append('photo', new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }), 'sample-blocked-ramp.jpg')
     form.append('context', JSON.stringify({ stepFree: true, slopePct: 7, widthM: 1.4 }))
     const result = await api<{ category: string; source: string; note: string }>('POST', '/api/classify', form)
     expect(result.status).toBe(200)
     expect(result.data).toMatchObject({ category: 'blocked_ramp', source: 'simulated' })
-    expect(result.data.note).toMatch(/no ANTHROPIC_API_KEY/)
+    expect(result.data.note).toMatch(/CLASSIFIER=clip/)
     expect((await api('POST', '/api/classify', new FormData())).status).toBe(400)
   })
 

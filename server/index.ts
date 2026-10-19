@@ -8,9 +8,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import campusData from '../data/campus.json'
 import { withFallback, type Classifier } from '../src/classifier'
-import { createRealClassifier } from '../src/classifier/real'
+import { createClipClassifier } from '../src/classifier/clip'
 import { simulatedClassifier } from '../src/classifier/simulated'
 import { loadCampus } from '../src/core/graph'
+import { createClipRuntime } from './clip-backend'
 import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
 import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
@@ -80,14 +81,12 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   return app
 }
 
-/** Classifier used by /api/classify: the real model when a key is set, always with the simulated fallback. */
-export function serverClassifier(apiKey: string | undefined): Classifier {
-  const key = apiKey?.trim()
-  const real = key ? createRealClassifier({ apiKey: key, timeoutMs: 5000 }) : null
-  return withFallback(real, simulatedClassifier, {
+/** Classifier used by /api/classify: CLIP when asked for, always with the simulated fallback. */
+export function serverClassifier(clip: Classifier | null): Classifier {
+  return withFallback(clip, simulatedClassifier, {
     timeoutMs: 5000,
-    missingNote: 'Demo classifier: the server has no ANTHROPIC_API_KEY set.',
-    failurePrefix: 'Real model unavailable',
+    missingNote: 'Demo classifier. Start the server with CLASSIFIER=clip to use the CLIP image model.',
+    failurePrefix: 'CLIP model unavailable',
   })
 }
 
@@ -107,13 +106,23 @@ function main(): void {
   const db = openDb(dbPath)
   seedCampus(db, campus)
   if (seedDemoIfNew(db, campus.areaId)) console.log('Loaded the example reports into a new database.')
+  let clip: Classifier | null = null
+  if (process.env.CLASSIFIER?.toLowerCase() === 'clip') {
+    const runtime = createClipRuntime(process.env.MODEL_CACHE_DIR ?? path.join(path.dirname(dbPath), 'models'))
+    clip = createClipClassifier(runtime)
+    const started = Date.now()
+    runtime.warmUp().then(
+      () => console.log(`CLIP model ready in ${((Date.now() - started) / 1000).toFixed(1)} s`),
+      (error: unknown) => console.error('CLIP model could not load; using the demo classifier:', error instanceof Error ? error.message : error),
+    )
+  }
   const app = createApp(
-    { db, campus, uploadsDir, classifier: serverClassifier(process.env.ANTHROPIC_API_KEY) },
+    { db, campus, uploadsDir, classifier: serverClassifier(clip) },
     { staticDir: path.join(root, 'dist'), corsOrigin: process.env.CORS_ORIGIN },
   )
   app.listen(port, () => {
     console.log(`REACHABLE API on http://localhost:${port}  (database: ${path.relative(root, dbPath)})`)
-    console.log(process.env.ANTHROPIC_API_KEY ? 'Photo classifier: Claude (falls back to simulated)' : 'Photo classifier: simulated (no ANTHROPIC_API_KEY)')
+    console.log(clip ? 'Photo classifier: CLIP (loading; falls back to the demo classifier)' : 'Photo classifier: simulated (set CLASSIFIER=clip for CLIP)')
   })
 }
 
