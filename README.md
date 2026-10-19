@@ -267,6 +267,8 @@ the app switches to the server's data mid-demo.
   hash of the image, so the demo is repeatable. It is always labelled **"AI suggestion (demo)"**.
 - **Admin pages have no login**, and devices are identified by an anonymous id in the browser (no accounts).
 - The campus is **fictional**; there is no GPS or indoor map.
+- The map is an **illustration**, and says so on screen. Places, roads and their links come from `data/campus.json`;
+  the pond and the trees are decoration, drawn the same way every time (`src/components/mapDecor.ts`) and never used by routing.
 
 Roadmap (from PLAN.md): live GPS, indoor maps, user accounts, risk-aware routing, passive confirmation, pattern
 learning, passable-width estimation.

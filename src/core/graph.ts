@@ -1,6 +1,6 @@
 // Campus graph helpers: validation, lookups and adjacency. Works for any campus data file.
 
-import type { Campus, CampusNode, CampusPath } from './types'
+import { NODE_KINDS, type Campus, type CampusNode, type CampusPath } from './types'
 
 export interface Neighbour {
   path: CampusPath
@@ -28,6 +28,9 @@ export function loadCampus(data: unknown): Campus {
   for (const node of campus.nodes) {
     if (nodeIds.has(node.id)) throw new Error(`Duplicate node id: ${node.id}`)
     if (node.areaId !== campus.areaId) throw new Error(`Node ${node.id} has areaId ${node.areaId}`)
+    if (node.kind !== undefined && !(NODE_KINDS as readonly string[]).includes(node.kind)) {
+      throw new Error(`Node ${node.id} has unknown kind ${node.kind}`)
+    }
     nodeIds.add(node.id)
   }
   const pathIds = new Set<string>()

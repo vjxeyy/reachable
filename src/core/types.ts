@@ -23,6 +23,10 @@ export type Vote = 'still_there' | 'cleared'
 export const PROFILE_IDS = ['wheelchair', 'crutches', 'low_vision'] as const
 export type ProfileId = (typeof PROFILE_IDS)[number]
 
+/** How the illustrated map draws a place. Drawing only: routing ignores it. */
+export const NODE_KINDS = ['building', 'green', 'field', 'lot', 'gate', 'stop'] as const
+export type NodeKind = (typeof NODE_KINDS)[number]
+
 /** Epoch milliseconds. */
 export type Timestamp = number
 
@@ -32,6 +36,8 @@ export interface CampusNode {
   x: number
   y: number
   areaId: string
+  /** Optional: drawn as a building when missing. */
+  kind?: NodeKind
 }
 
 /** A two-way walking link between two nodes. */

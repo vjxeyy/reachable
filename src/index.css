@@ -19,6 +19,14 @@
   --caution: #d97706;
   --map-bg: #e8edd9;
   --path: #8c9187;
+  --road: #faf7ec;
+  --road-edge: #cbc4ac;
+  --lawn: #d4e3c1;
+  --lawn-edge: #b9cfa4;
+  --water: #cfe1dc;
+  --water-edge: #b3cdc6;
+  --building: #f4f0e0;
+  --building-edge: #9a947c;
   --steps: #8a6a3a;
   --radius: 8px;
   --shadow: 0 1px 2px rgb(28 43 35 / 8%);
@@ -580,17 +588,14 @@ textarea {
 }
 
 .path-casing {
-  stroke: #fff;
-  stroke-width: 14;
+  stroke: var(--road-edge);
+  stroke-width: 18;
   stroke-linecap: round;
 }
 .path-line {
-  stroke: var(--path);
-  stroke-width: 8;
+  stroke: var(--road);
+  stroke-width: 14;
   stroke-linecap: round;
-}
-.path-steps .path-casing {
-  stroke-width: 20;
 }
 .path-steps .path-line {
   stroke: var(--steps);
@@ -598,12 +603,95 @@ textarea {
   stroke-dasharray: 3 6;
   stroke-linecap: butt;
 }
+
+/* Illustrated ground: pond, trees and places. Drawing only. */
+.map-pond {
+  fill: var(--water);
+  stroke: var(--water-edge);
+  stroke-width: 3;
+}
+.tree-shadow {
+  fill: rgb(60 90 55 / 14%);
+}
+.tree {
+  fill: #b7cfa3;
+  stroke: #9db98a;
+  stroke-width: 2;
+}
+.places {
+  pointer-events: none;
+}
+.place-building {
+  fill: var(--building);
+  stroke: var(--building-edge);
+  stroke-width: 2;
+}
+.place-roof {
+  fill: none;
+  stroke: var(--road-edge);
+  stroke-width: 2;
+}
+.place-lawn {
+  fill: var(--lawn);
+  stroke: var(--lawn-edge);
+  stroke-width: 2.5;
+}
+.place-pool {
+  fill: var(--water);
+  stroke: var(--water-edge);
+  stroke-width: 2.5;
+}
+.place-line {
+  fill: none;
+  stroke: #f3f6ea;
+  stroke-width: 2.5;
+}
+.place-lot {
+  fill: #dedbd0;
+  stroke: #c2bfb0;
+  stroke-width: 2;
+}
+.place-lot-mark {
+  font-size: 22px;
+  font-weight: 800;
+  fill: #8a8776;
+  text-anchor: middle;
+}
+.place-post {
+  fill: var(--building);
+  stroke: var(--building-edge);
+  stroke-width: 2;
+}
+.place-bar {
+  stroke: var(--building-edge);
+  stroke-width: 3;
+  stroke-dasharray: 5 4;
+}
+.place-sign {
+  fill: var(--primary);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+.place-sign-line {
+  stroke: var(--surface);
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+.compass-arrow {
+  fill: var(--muted);
+}
+.compass-n {
+  font-size: 17px;
+  font-weight: 800;
+  fill: var(--muted);
+  text-anchor: middle;
+}
 .path-excluded {
   opacity: 0.28;
 }
 .path-selected .path-casing {
   stroke: #facc15;
-  stroke-width: 26;
+  stroke-width: 28;
 }
 .path-badge {
   font-size: 17px;
@@ -738,9 +826,10 @@ textarea {
 .marker {
   cursor: pointer;
 }
-.marker circle {
+.marker polygon {
   stroke: #fff;
   stroke-width: 3;
+  stroke-linejoin: round;
 }
 .marker text {
   fill: #fff;
@@ -749,16 +838,16 @@ textarea {
   text-anchor: middle;
   pointer-events: none;
 }
-.marker-verified circle {
+.marker-verified polygon {
   fill: var(--verified);
 }
-.marker-unverified circle {
+.marker-unverified polygon {
   fill: var(--unverified);
 }
-.marker-outdated circle {
+.marker-outdated polygon {
   fill: var(--outdated);
 }
-.marker-cleared circle {
+.marker-cleared polygon {
   fill: var(--cleared);
 }
 
@@ -770,8 +859,8 @@ textarea {
   .path-badge {
     font-size: 24px;
   }
-  .marker circle {
-    r: 20px;
+  .marker polygon {
+    transform: scale(1.25);
   }
   .marker text {
     font-size: 24px;
@@ -801,13 +890,18 @@ textarea {
   stroke-linecap: round;
 }
 .legend-path {
-  stroke: var(--path);
-  stroke-width: 4;
+  stroke: var(--road);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+.legend-path-edge {
+  stroke: var(--road-edge);
+  stroke-width: 9;
   stroke-linecap: round;
 }
 .legend-steps {
   stroke: var(--steps);
-  stroke-width: 8;
+  stroke-width: 6;
   stroke-dasharray: 2 3;
 }
 .legend-faded {
@@ -821,10 +915,11 @@ textarea {
 
 .legend-dot {
   display: inline-block;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  margin-left: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  margin: 0 3px 0 8px;
 }
 .legend-dot:first-child {
   margin-left: 0;
@@ -840,7 +935,28 @@ textarea {
 }
 
 .map-hint {
-  margin: 2px 6px 6px;
+  margin: 8px 6px 4px;
+}
+
+.map-tags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px 10px;
+  margin: 0 0 8px;
+}
+.map-tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.map-tag-quiet {
+  color: var(--muted);
 }
 
 /* ---------- Small helpers ---------- */

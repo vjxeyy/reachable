@@ -78,7 +78,10 @@ export function Home() {
       </div>
       <div className="area-map">
         <div className="map-card">
-          <p className="map-hint muted small">Tap a path to report a problem or see its reports.</p>
+          <div className="map-tags">
+            <span className="map-tag">{campus.name}</span>
+            <span className="map-tag map-tag-quiet">Illustrative map, not to scale</span>
+          </div>
           <CampusMap
             campus={campus}
             profiles={profiles}
@@ -91,6 +94,7 @@ export function Home() {
             onPathSelect={setSelectedPathId}
           />
           <MapLegend />
+          <p className="map-hint muted small">Tap a road to report a problem or see its reports.</p>
         </div>
       </div>
       <div className="area-result">
@@ -156,7 +160,8 @@ function MapLegend() {
       </li>
       <li>
         <svg width="34" height="12" aria-hidden="true">
-          <line x1="2" y1="6" x2="32" y2="6" className="legend-path" />
+          <line x1="4" y1="6" x2="30" y2="6" className="legend-path-edge" />
+          <line x1="4" y1="6" x2="30" y2="6" className="legend-path" />
         </svg>
         Step-free path
       </li>
@@ -168,7 +173,10 @@ function MapLegend() {
       </li>
       <li>
         <svg width="34" height="12" aria-hidden="true">
-          <line x1="2" y1="6" x2="32" y2="6" className="legend-path legend-faded" />
+          <g className="legend-faded">
+            <line x1="4" y1="6" x2="30" y2="6" className="legend-path-edge" />
+            <line x1="4" y1="6" x2="30" y2="6" className="legend-path" />
+          </g>
         </svg>
         Not usable with this profile
       </li>

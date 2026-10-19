@@ -1,8 +1,9 @@
-import type { KeyboardEvent } from 'react'
+import { useMemo, type KeyboardEvent } from 'react'
 import { pathKind } from '../core/graph'
 import { hardExclusionReason, resolveProfile } from '../core/profiles'
 import type { Route } from '../core/route'
-import type { Campus, CampusNode, ProfileId, ReportStatus } from '../core/types'
+import type { Campus, CampusNode, NodeKind, ProfileId, ReportStatus } from '../core/types'
+import { mapDecor } from './mapDecor'
 
 /** One marker per path that has live reports. */
 export interface MapMarker {
@@ -27,6 +28,9 @@ interface Props {
 }
 
 const PAD = 24
+
+/** Half the height of each kind of place, so its label can sit just clear of it. */
+const HALF_HEIGHT: Record<NodeKind, number> = { building: 26, green: 36, field: 29, lot: 22, gate: 14, stop: 11 }
 
 function midpoint(a: CampusNode, b: CampusNode) {
   return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
@@ -61,20 +65,91 @@ function onKeyActivate(event: KeyboardEvent, action: () => void) {
   }
 }
 
+/** The drawing of one place: a building, lawn, pitch, car park, gate or bus stop. Centred on (0, 0). */
+function Place({ kind }: { kind: NodeKind }) {
+  switch (kind) {
+    case 'green':
+      return (
+        <>
+          <ellipse rx={56} ry={36} className="place-lawn" />
+          <circle r={11} className="place-pool" />
+        </>
+      )
+    case 'field':
+      return (
+        <>
+          <rect x={-48} y={-29} width={96} height={58} rx={6} className="place-lawn" />
+          <line x1={0} y1={-24} x2={0} y2={24} className="place-line" />
+          <circle r={10} className="place-line" />
+        </>
+      )
+    case 'lot':
+      return (
+        <>
+          <rect x={-40} y={-22} width={80} height={44} rx={3} className="place-lot" />
+          <text className="place-lot-mark" y={7}>
+            P
+          </text>
+        </>
+      )
+    case 'gate':
+      return (
+        <>
+          <rect x={-32} y={-14} width={9} height={28} rx={2} className="place-post" />
+          <rect x={23} y={-14} width={9} height={28} rx={2} className="place-post" />
+          <line x1={-23} y1={0} x2={23} y2={0} className="place-bar" />
+        </>
+      )
+    case 'stop':
+      return (
+        <>
+          <rect x={-15} y={-11} width={30} height={22} rx={3} className="place-sign" />
+          <line x1={-9} y1={0} x2={9} y2={0} className="place-sign-line" />
+        </>
+      )
+    default:
+      return (
+        <>
+          <rect x={-44} y={-26} width={88} height={52} rx={4} className="place-building" />
+          <rect x={-37} y={-19} width={74} height={38} rx={2} className="place-roof" />
+        </>
+      )
+  }
+}
+
 export function CampusMap({ campus, profiles, route, caution, from, to, markers = [], selectedPathId, onPathSelect }: Props) {
   const nodes = new Map(campus.nodes.map((n) => [n.id, n]))
   const prof = resolveProfile(profiles)
   const routeKey = route ? route.pathIds.join('>') : ''
   const onRoute = new Set(route?.nodeIds ?? [])
+  const decor = useMemo(() => mapDecor(campus), [campus])
+  const full = { x: -PAD, y: -PAD, width: campus.width + PAD * 2, height: campus.height + PAD * 2 }
 
   return (
     <svg
       className="campus-map"
-      viewBox={`${-PAD} ${-PAD} ${campus.width + PAD * 2} ${campus.height + PAD * 2}`}
+      viewBox={`${full.x} ${full.y} ${full.width} ${full.height}`}
       role="img"
-      aria-label={`Map of ${campus.name}`}
+      aria-label={`Illustrated map of ${campus.name}`}
     >
-      <rect x={-PAD} y={-PAD} width={campus.width + PAD * 2} height={campus.height + PAD * 2} rx={10} className="map-bg" />
+      <defs>
+        <clipPath id="map-clip">
+          <rect {...full} rx={10} />
+        </clipPath>
+      </defs>
+      <rect {...full} rx={10} className="map-bg" />
+
+      <g clipPath="url(#map-clip)" aria-hidden="true">
+        <ellipse cx={decor.pond.cx} cy={decor.pond.cy} rx={decor.pond.rx} ry={decor.pond.ry} className="map-pond" />
+        <g className="map-trees">
+          {decor.trees.map((t) => (
+            <g key={`${t.x}-${t.y}`}>
+              <circle cx={t.x + 2} cy={t.y + 3} r={t.r} className="tree-shadow" />
+              <circle cx={t.x} cy={t.y} r={t.r} className="tree" />
+            </g>
+          ))}
+        </g>
+      </g>
 
       <g className="paths">
         {campus.paths.map((path) => {
@@ -109,6 +184,14 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
             </g>
           )
         })}
+      </g>
+
+      <g className="places" aria-hidden="true">
+        {campus.nodes.map((node) => (
+          <g key={node.id} className="place" transform={`translate(${node.x} ${node.y})`}>
+            <Place kind={node.kind ?? 'building'} />
+          </g>
+        ))}
       </g>
 
       {caution && (
@@ -162,7 +245,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
               transform={`translate(${mid.x} ${mid.y})`}
               onClick={onPathSelect ? () => onPathSelect(marker.pathId) : undefined}
             >
-              <circle r={15} />
+              <polygon points="0,-19 19,0 0,19 -19,0" />
               <text y={6}>{marker.count > 1 ? marker.count : '!'}</text>
             </g>
           )
@@ -172,12 +255,13 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
       <g className="nodes">
         {campus.nodes.map((node) => {
           const lines = labelLines(node.name)
-          const below = node.y < campus.height - 40
-          const firstY = below ? node.y + 34 : node.y - 22 - (lines.length - 1) * 24
+          const half = HALF_HEIGHT[node.kind ?? 'building']
+          const below = node.y < campus.height - 60
+          const firstY = below ? node.y + half + 24 : node.y - half - 10 - (lines.length - 1) * 24
           const role = node.id === from ? 'start' : node.id === to ? 'end' : onRoute.has(node.id) ? 'via' : ''
           return (
             <g key={node.id} className={`node${role ? ` node-${role}` : ''}`}>
-              <circle cx={node.x} cy={node.y} r={role === 'start' || role === 'end' ? 15 : 11} />
+              {role && <circle cx={node.x} cy={node.y} r={role === 'start' || role === 'end' ? 15 : 9} />}
               {role === 'end' && <circle cx={node.x} cy={node.y} r={5} className="node-end-dot" />}
               <text x={node.x} y={firstY} className="node-label">
                 {lines.map((line, i) => (
@@ -189,6 +273,13 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
             </g>
           )
         })}
+      </g>
+
+      <g className="compass" aria-hidden="true" transform={`translate(${campus.width - 28} ${campus.height - 52})`}>
+        <polygon points="0,-18 8,6 0,1 -8,6" className="compass-arrow" />
+        <text y={26} className="compass-n">
+          N
+        </text>
       </g>
     </svg>
   )

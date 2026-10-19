@@ -166,3 +166,7 @@ Write each decision down here when it is made, so later phases stay consistent.
     The simulated classifier is always labelled "AI suggestion (demo)".
     History: a Claude vision classifier (needs a paid key) and hosted Hugging Face CLIP were considered and dropped;
     Hugging Face's hosted service serves no CLIP model and gives free accounts no credits.
+14. **Illustrated map** (`src/components/CampusMap.tsx`, `mapDecor.ts`): each node may carry an optional `kind`
+    (`building`, `green`, `field`, `lot`, `gate`, `stop`; a missing kind draws a building). It only decides how the place
+    is drawn, routing ignores it. The pond and trees are deterministic decoration seeded from the campus id and kept off
+    places, labels and roads. The map is labelled "Illustrative map, not to scale".
