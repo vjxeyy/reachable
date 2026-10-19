@@ -79,12 +79,12 @@ export function findPillRadius(line: string): string | null {
 }
 
 /** Em dash, en dash. */
-const DASH = /[–—]/u
+const DASH = /[\u2013\u2014]/u
 /**
  * Emoji and glyph icons: arrows, technical symbols, geometric shapes, dingbats (ticks, crosses, stars),
  * the emoji planes, variation selectors and joiners. The middle dot and the ellipsis are not in these ranges.
  */
-const GLYPH = /[←-⇿⌀-⏿■-◿☀-➿⬀-⯿︎️‍\u{1f000}-\u{1faff}]/u
+const GLYPH = /[\u2190-\u21ff\u2300-\u23ff\u25a0-\u25ff\u2600-\u27bf\u2b00-\u2bff\u{1f000}-\u{1faff}]|\ufe0e|\ufe0f|\u200d/u
 
 const SOURCE = (file: string) => /^src\/.+\.(css|ts|tsx)$/.test(file) && !/\.test\.tsx?$/.test(file)
 const STYLES = (file: string) => /^src\/.+\.css$/.test(file)
@@ -181,20 +181,20 @@ describe('style rules', () => {
     expect(offences(css, 'a { border-radius: 6px; }')).toEqual([])
     expect(offences(css, 'a { border-radius: 50%; }')).toEqual([])
     // dashes, arrows, ticks, emoji
-    expect(offences(tsx, 'Canteen – Hostel')).toHaveLength(1)
-    expect(offences(tsx, 'Wait — what')).toHaveLength(1)
-    for (const glyph of ['→', '⇅', '✓', '✕', '◷', '★', '\u{1f600}', '♿']) {
+    expect(offences(tsx, 'Canteen \u2013 Hostel')).toHaveLength(1)
+    expect(offences(tsx, 'Wait \u2014 what')).toHaveLength(1)
+    for (const glyph of ['\u2192', '\u21c5', '\u2713', '\u2715', '\u25f7', '\u2605', '\u{1f600}', '\u267f']) {
       expect(offences(tsx, `<span>${glyph}</span>`)).toHaveLength(1)
     }
-    expect(offences(tsx, 'Reported 5 min ago · Library…')).toEqual([]) // middle dot and ellipsis are fine
-    expect(offences('README.md', 'a — b')).toHaveLength(1)
+    expect(offences(tsx, 'Reported 5 min ago \u00b7 Library\u2026')).toEqual([]) // middle dot and ellipsis are fine
+    expect(offences('README.md', 'a \u2014 b')).toHaveLength(1)
     // cursor effects, scroll animation, testimonials
     expect(offences(tsx, "window.addEventListener('mousemove', f)")).toHaveLength(1)
     expect(offences(tsx, 'new IntersectionObserver(f)')).toHaveLength(1)
     expect(offences(css, 'html { scroll-behavior: smooth; }')).toHaveLength(1)
     expect(offences(tsx, '<p>Trusted by 10,000 students</p>')).toHaveLength(1)
     // test files and unrelated files are not scanned
-    expect(offences('src/core/x.test.ts', 'a — b')).toEqual([])
-    expect(offences('package.json', 'a — b')).toEqual([])
+    expect(offences('src/core/x.test.ts', 'a \u2014 b')).toEqual([])
+    expect(offences('package.json', 'a \u2014 b')).toEqual([])
   })
 })
