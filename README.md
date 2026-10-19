@@ -20,7 +20,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm or clear a report; clearing restores the route instantly.
-- **Admin dashboard** (`#/admin`). Filter reports, verify or resolve them, and see how many paths are affected.
+- **Dashboard** (`#/admin`). Filter reports, verify or resolve them, and see how many paths are affected.
 - **Works offline.** Without the server, reports live in the browser (localStorage). When the server is up,
   reports are shared between devices.
 
@@ -141,7 +141,7 @@ Either way the user always confirms or corrects the category.
 
 ## The 60-second demo
 
-Start from a fresh load, or press **Reset demo** in the header. Reset restores the 4 example reports (each is
+Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. Reset restores the 4 example reports (each is
 tagged **Example**, so nobody mistakes them for real reports), sets the clock back to now and clears the route picker.
 The photo buttons are labelled **Sample drawing**: they are bundled illustrations, not photos.
 
@@ -158,8 +158,9 @@ The photo buttons are labelled **Sample drawing**: they are bundled illustration
 
 Extras if you have time:
 
-- **+6 hours** in the header: the example *parked vehicle* report turns **Outdated** and stops blocking.
-- **Admin**: verify an unverified report and it becomes a hard block at once. Try Wheelchair, Main Gate to
+- **+6 hours** under **Demo tools**: the example *parked vehicle* report turns **Outdated** and stops blocking.
+  The clock label then reads *Demo clock: now + 6 h*, and **Back to now** undoes it.
+- **Dashboard**: verify an unverified report and it becomes a hard block at once. Try Wheelchair, Main Gate to
   Health Centre with a blocked Health Centre ramp, before and after verifying.
 - **Crutches**, Admin Block to Library: uses the gentle Admin steps, which Wheelchair cannot.
 - **Wheelchair and Low vision** together, Library to Hostel, with a *partly blocked* report on the hostel ramp:
@@ -181,7 +182,7 @@ npm run demo:check
 npm test
 ```
 
-78 Vitest tests. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
+116 Vitest tests, including `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
 tests cover trust and freshness, the demo seed data, the classifiers and the API. Server tests use an
 in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The
 real classifiers are tested with stand-ins (a local fake OpenRouter server and a fake CLIP model), so the tests never need a key, a download or the internet.
@@ -226,7 +227,7 @@ data/seed-reports.json   example reports for a fresh start / Reset demo
 src/core/                routing, profiles, trust, seed builder + tests (no React, no network)
 src/classifier/          interface + fallback (index), simulated, openrouter, clip
 src/components/          CampusMap, RoutePanel, ReportForm, ReportList, TrustBadge
-src/pages/               Home (map), Admin
+src/pages/               Home (map), Report (report obstacle), Admin (the Dashboard)
 src/state/               store (localStorage or API), api client
 server/                  Express app, SQLite (db.ts), routes/
 scripts/demo-check.mjs   scripted 60-second demo
@@ -266,7 +267,7 @@ the app switches to the server's data mid-demo.
 
 - The **simulated classifier** does not look at the picture. It uses the file name, the shape of the path and a
   hash of the image, so the demo is repeatable. It is always labelled **"AI suggestion (demo)"**.
-- **Admin pages have no login**, and devices are identified by an anonymous id in the browser (no accounts).
+- **The Dashboard has no login**, and devices are identified by an anonymous id in the browser (no accounts).
 - The campus is **fictional**; there is no GPS or indoor map.
 - The map is an **illustration**, and says so on screen. Places, roads and their links come from `data/campus.json`;
   the pond and the trees are decoration, drawn the same way every time (`src/components/mapDecor.ts`) and never used by routing.

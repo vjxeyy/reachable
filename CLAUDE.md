@@ -30,7 +30,7 @@ reachable/
       types.ts graph.ts profiles.ts trust.ts route.ts route.test.ts
     classifier/             index.ts (picks one), simulated.ts, real.ts (Phase 7)
     components/             CampusMap, RoutePanel, ReportForm, ReportList, TrustBadge
-    pages/                  Home.tsx, Admin.tsx
+    pages/                  Home.tsx, Report.tsx (report obstacle), Admin.tsx (the Dashboard), reportViews.tsx
     state/store.ts          localStorage store, switches to the API when the backend is up
     App.tsx
   server/                   index.ts, db.ts, routes/  (Express + SQLite)
@@ -108,8 +108,16 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
   `CLASSIFIER=clip`, else the simulated classifier. Keys come only from env vars. If the real model is off, fails,
   is still loading or is too slow, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or a key.
 - The app must work with no backend (localStorage store) and switch to the API when it is reachable.
-- Demo support: 3 or 4 pre-seeded reports, a "Reset demo" button, and a "+6 hours" time control.
+- Demo support: 3 or 4 pre-seeded reports (tagged "Example"), a "Reset demo" button, and a "+6 hours" time control.
+  They live in a "Demo tools" footer, not the header, because only a presenter needs them.
 - Must be usable at phone width (about 360 px).
+- Style rules (checked by `server/style-rules.test.ts`, which fails with file and line): no purple or indigo, no gradients,
+  no pill-shaped buttons or tags (corners are 4 to 8 px, panels 16 px), no emoji or glyph icons (use the SVG icons in
+  `src/components/icons.tsx`), no em or en dashes, no cursor effects or scroll-driven animation, no fake reviews, counters
+  or metrics, no vague hero text, no AI-looking photos. Demo content is labelled: seeded reports say "Example", sample
+  pictures say "Sample drawing", simulated classifier output says "AI suggestion (demo)".
+- Design tokens are the `:root` variables in `src/index.css` (deep green and cream). Text pairs keep at least 4.5:1
+  contrast, and a status is never shown by colour alone: the word is always there.
 - Tests never touch the real database. Server tests use an in-memory SQLite database. `server/db.ts` refuses
   to open the real database file while running under Vitest.
 
@@ -170,3 +178,14 @@ Write each decision down here when it is made, so later phases stay consistent.
     (`building`, `green`, `field`, `lot`, `gate`, `stop`; a missing kind draws a building). It only decides how the place
     is drawn, routing ignores it. The pond and trees are deterministic decoration seeded from the campus id and kept off
     places, labels and roads. The map is labelled "Illustrative map, not to scale".
+15. **Combined profiles** (`src/core/profiles.ts`): a person can tick several profiles. `combineProfiles` returns the
+    strictest of them: step-free if any needs it, the widest minimum width, the gentlest slope limit, every soft penalty
+    added, the largest partial-obstacle penalty, and "any active obstacle blocks" if any profile has it. Duplicates are
+    dropped and the order is fixed, so the same set always gives the same route. One profile is returned unchanged, so
+    single-profile routes are identical to before. `GET /api/route?profile=wheelchair,low_vision` takes a comma list.
+    The fail-safe text stays "No verified step-free route" whenever step-free is required.
+16. **Report obstacle page** (`#/report`, `src/pages/Report.tsx`): every step shows from the start (road, photo, problem,
+    severity, note) beside a Recent reports list. The road comes from a list (roads on the current route first) or a tap
+    on a small map, which is easier on a phone than tapping the main map. A suggestion made before a road was chosen is
+    redone once the road is known, unless the person already answered. The old `#/admin` address now opens the page
+    called Dashboard.
