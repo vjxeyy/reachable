@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { graphFor } from '../../src/core/graph'
-import { voteBlockReason, withDerivedStatus } from '../../src/core/trust'
+import { ADMIN_ONLY_CLEAR, voteBlockReason, withDerivedStatus } from '../../src/core/trust'
 import { CATEGORIES, SEVERITIES, type Category, type Report, type Severity, type Vote } from '../../src/core/types'
 import {
   getReport,
@@ -121,8 +121,9 @@ export function reportsRouter(ctx: ServerContext): Router {
       const report = findReport(ctx, req)
       const voterId = requireString((req.body as Record<string, unknown> | undefined)?.voterId, 'voterId', 80)
       const at = timeFrom(req)
-      const blocked = voteBlockReason(report, listConfirmations(db, campus.areaId), voterId, kind, at)
-      if (blocked) throw new HttpError(409, blocked)
+      const isAdmin = ctx.auth.sessionFrom(req) !== null
+      const blocked = voteBlockReason(report, listConfirmations(db, campus.areaId), voterId, kind, at, isAdmin)
+      if (blocked) throw new HttpError(blocked === ADMIN_ONLY_CLEAR ? 403 : 409, blocked)
       db.transaction(() => {
         insertConfirmation(db, { reportId: report.id, areaId: report.areaId, voterId, vote: kind, at })
         if (kind === 'cleared') updateReportTimes(db, report.id, { clearedAt: at })

@@ -183,6 +183,30 @@ describe('what needs the owner', () => {
   })
 })
 
+describe('clearing reports', () => {
+  const clear = (id: string, cookie?: string | null) => call('POST', `/api/reports/${id}/clear`, { voterId: 'a-passer-by' }, cookie)
+
+  it('lets anyone clear an unverified report with one press', async () => {
+    await call('POST', '/api/demo/reset', {}, await owner())
+    expect((await clear('seed-kerb')).status).toBe(200)
+  })
+
+  it('keeps verified blocks for the admin, whether an admin or two people verified them', async () => {
+    const cookie = await owner()
+    await call('POST', '/api/demo/reset', {}, cookie)
+    // seed-flooding was verified by an admin, seed-raised-slabs by two confirmations.
+    const byAdmin = await clear('seed-flooding')
+    expect(byAdmin.status).toBe(403)
+    expect(JSON.stringify(byAdmin.data)).toMatch(/Only the admin/)
+    expect((await clear('seed-raised-slabs')).status).toBe(403)
+    // Still there is open to everyone.
+    expect((await call('POST', '/api/reports/seed-flooding/confirm', { voterId: 'a-passer-by' })).status).toBe(200)
+    // The signed-in admin can clear it.
+    expect((await clear('seed-flooding', cookie)).status).toBe(200)
+    expect((await clear('seed-raised-slabs', cookie)).status).toBe(200)
+  })
+})
+
 describe('limits', () => {
   it('blocks a sixth failed login from the same place, then lets it through later', async () => {
     for (let i = 0; i < 5; i++) expect((await login({ email: OWNER.email, password: 'wrong-wrong-wrong' }, '203.0.113.7')).status).toBe(401)

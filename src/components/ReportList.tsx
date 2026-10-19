@@ -80,6 +80,7 @@ interface VoteProps {
 export function VoteButtons({ report, blockedReason, onVote }: VoteProps) {
   if (report.status === 'cleared') return null
   const stillReason = blockedReason('still_there')
+  const clearReason = blockedReason('cleared')
   return (
     <>
       <button
@@ -91,10 +92,16 @@ export function VoteButtons({ report, blockedReason, onVote }: VoteProps) {
       >
         Still there
       </button>
-      <button type="button" className="btn btn-good btn-small" onClick={() => onVote('cleared')}>
+      <button
+        type="button"
+        className="btn btn-good btn-small"
+        disabled={clearReason !== null}
+        title={clearReason ?? 'Mark the obstacle as gone'}
+        onClick={() => onVote('cleared')}
+      >
         Cleared
       </button>
-      {stillReason && <span className="muted small vote-note">{stillReason}</span>}
+      {(clearReason ?? stillReason) && <span className="muted small vote-note">{clearReason ?? stillReason}</span>}
     </>
   )
 }

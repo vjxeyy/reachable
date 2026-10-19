@@ -493,7 +493,9 @@ export async function addReport(input: NewReport): Promise<{ report: Report } | 
 
 /** Why this browser cannot cast the vote now, or null. */
 export function voteBlocked(report: Report, vote: Vote): string | null {
-  return voteBlockReason(report, state.confirmations, clientId, vote, now())
+  // With no server the reports are this browser's own, so there is nobody to protect them from.
+  const isAdmin = state.source !== 'api' || state.auth.user !== null
+  return voteBlockReason(report, state.confirmations, clientId, vote, now(), isAdmin)
 }
 
 /** "Still there" or "Cleared" from this browser. A cleared vote restores routes at once. */

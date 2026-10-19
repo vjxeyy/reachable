@@ -19,7 +19,8 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
   risky one. The best unverified option is available on request, labelled *"Unverified, use with caution"*.
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
-- **Still there / Cleared.** Anyone can confirm or clear a report; clearing restores the route instantly.
+- **Still there / Cleared.** Anyone can confirm a report, and anyone can clear an unverified or outdated one (the route is restored
+  at once). A **verified** block can only be cleared by the admin, so one anonymous press cannot lift it.
 - **Dashboard** (`#/admin`). Anyone can look at it: filter reports and see how many paths are affected. Verifying or resolving reports needs the admin login.
 - **Works offline.** Without the server, reports live in the browser (localStorage). When the server is up,
   reports are shared between devices.
@@ -204,7 +205,7 @@ because resetting the demo needs the login.
 npm test
 ```
 
-131 Vitest tests, including the login tests in `server/auth.test.ts` and `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
+135 Vitest tests, including the login tests in `server/auth.test.ts` and `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
 tests cover trust and freshness, the demo seed data, the classifiers and the API. Server tests use an
 in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The
 real classifiers are tested with stand-ins (a local fake OpenRouter server and a fake CLIP model), so the tests never need a key, a download or the internet.
