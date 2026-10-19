@@ -109,3 +109,31 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
 ## Interpretations (decisions where PLAN.md is open)
 
 Write each decision down here when it is made, so later phases stay consistent.
+
+1. **Two-pass fail-safe** (`src/core/route.ts`). The strict pass drops hard-rule paths and every blocking
+   report, verified or unverified. A route found there is `status: "ok"`, the only kind shown as the route.
+   If none is found, the fallback pass keeps verified blocks excluded and charges +200 per unverified block.
+   That route is returned as `no_verified_route` with `alternative` labelled "Unverified, use with caution".
+   This is the only reading where "plus the best unverified option" can exist. It also makes demo step 4 work
+   (a fresh, unverified second block gives "No verified step-free route"), and it guarantees "avoids it if any
+   alternative exists" even when the detour is more than 200 m longer.
+2. **Low vision**: "any active obstacle treated as blocking" covers partial reports too. A verified partial
+   report is excluded and an unverified one acts as an unverified block. The +30 partial value stays in
+   `profiles.ts` but cannot fire while `activeObstacleBlocks` is on.
+3. **Several reports on one path do not stack.** The worst one counts, so duplicates are not double-counted.
+4. **Data model additions** (listed fields keep their exact names): Report gains `areaId`, `reporterId`,
+   `adminVerifiedAt` and `aiCategory`; Confirmation gains `areaId` and `voterId`. Timestamps are epoch ms.
+5. **Independent confirmations** = distinct `voterId`s voting `still_there`, not counting the reporter's own
+   device. The original report is not a confirmation, so verified means reporter + 2 others, or an admin.
+6. **Freshness**: `lastConfirmedAt` = the latest of the report, a `still_there` vote and an admin verify.
+   A verified report also goes outdated if nobody re-confirms it within its decay time.
+7. **Clearing**: one `cleared` vote or an admin resolve clears a report immediately (Phase 4 needs instant
+   restore). Cleared is final; a returning obstacle is filed as a new report.
+8. **Confidence shown** = `1 - (1 - aiConfidence) * 0.5^confirmations`, and 1 after an admin verify.
+   Status depends only on counts and age, as written in the plan.
+9. **Why a route changed**: the core also computes the "usual" route (same profile, no reports). If the route
+   differs, `reroute.because` lists the reports on the usual route. For `no_verified_route`, `blockedBy` lists
+   the reports where clearing any single one would bring a route back.
+10. **Campus**: `areaId` is the campus id (`ashgrove`). The Workshop has no step-free access at all, which
+    gives a natural `no_path_for_profile` example. Health Centre is the area whose only step-free link is
+    one ramp. Admin to Library and Lab to Lecture Halls each have a stepped shortcut and a longer step-free route.
