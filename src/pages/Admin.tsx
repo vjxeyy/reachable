@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AccessRequests } from '../components/AccessRequests'
 import { CATEGORY_LABEL, STATUS_LABEL } from '../components/labels'
 import { ReportList } from '../components/ReportList'
 import { TrustBadge } from '../components/TrustBadge'
@@ -20,7 +19,7 @@ function routeEffect(report: Report): string {
 }
 
 /**
- * The Dashboard behind its gate. On the shared server only a signed-in owner or approved admin gets in.
+ * The Dashboard behind its gate. On the shared server only the signed-in admin gets in.
  * With no server there is nothing shared to protect: it opens, with a note.
  */
 export function Admin() {
@@ -48,23 +47,10 @@ export function Admin() {
       </div>
     )
   }
-  if (auth.user?.role === 'pending') {
-    return (
-      <div className="admin">
-        <section className="panel">
-          <h1 className="page-title">Waiting for approval</h1>
-          <p>
-            You are signed in as <strong>{auth.user.email}</strong>, but the owner has not approved your account yet.
-            You will see the Dashboard here once they do.
-          </p>
-        </section>
-      </div>
-    )
-  }
-  return <Dashboard owner={auth.user?.role === 'owner'} shared={source === 'api'} />
+  return <Dashboard shared={source === 'api'} />
 }
 
-function Dashboard({ owner, shared }: { owner: boolean; shared: boolean }) {
+function Dashboard({ shared }: { shared: boolean }) {
   const { reports, confirmations } = useStore()
   const now = useNow()
   const [status, setStatus] = useState<ReportStatus | 'all'>('all')
@@ -98,7 +84,6 @@ function Dashboard({ owner, shared }: { owner: boolean; shared: boolean }) {
           No shared server here, so changes only affect reports saved in this browser.
         </p>
       )}
-      {owner && <AccessRequests now={now} />}
 
       <section className="stats" aria-label="Summary">
         <Stat label="Affected paths" value={affectedPaths} hint={`of ${campus.paths.length} paths`} />

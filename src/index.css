@@ -1719,11 +1719,6 @@ textarea {
 .login-page .panel > p {
   margin: 0 0 12px;
 }
-.toggle-row {
-  display: flex;
-  gap: 6px;
-  margin-bottom: 14px;
-}
 .login-form {
   display: grid;
   gap: 12px;
@@ -1737,60 +1732,10 @@ textarea {
   flex: 1;
   min-width: 0;
 }
-.notice {
-  margin: 0 0 12px;
-  padding: 10px 12px;
-  border-radius: 8px;
-  background: var(--primary-soft);
-}
-.demo-login {
-  margin-top: 20px;
-  padding-top: 16px;
-  border-top: 1px solid var(--border);
-}
-.demo-login h2 {
-  font-size: 1rem;
-  margin-bottom: 6px;
-}
-.demo-login dl {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 4px 12px;
-  margin: 10px 0;
-}
-.demo-login dt {
-  color: var(--muted);
-  font-weight: 600;
-}
-.demo-login dd {
-  margin: 0;
-  font-weight: 600;
-  overflow-wrap: anywhere;
-}
 .banner {
   margin: 0;
   padding: 10px 12px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--unverified-soft);
-}
-.access-list {
-  list-style: none;
-  margin: 12px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 8px;
-}
-.access-item {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-}
-.access-email {
-  overflow-wrap: anywhere;
 }

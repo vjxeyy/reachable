@@ -189,14 +189,11 @@ Write each decision down here when it is made, so later phases stay consistent.
     on a small map, which is easier on a phone than tapping the main map. A suggestion made before a road was chosen is
     redone once the road is known, unless the person already answered. The old `#/admin` address now opens the page
     called Dashboard.
-17. **Admin login** (`server/auth.ts`, `server/routes/auth.ts`, `src/pages/Login.tsx`, `src/pages/Admin.tsx`): the owner is
-    one admin from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (never in the database). Sign-ups go in a `users` table as `pending`
-    until the owner approves them; the demo account comes from `DEMO_LOGIN_EMAIL` and `DEMO_LOGIN_PASSWORD` and is shown on
-    the login page on purpose. Roles: owner (everything), staff (approved sign-ups and the demo account: verify and
-    resolve), pending (nothing). `requireStaff` guards verify and resolve; `requireOwner` guards reset demo and user
-    management. Passwords use scrypt with a salt, comparison is constant time, every failed login gives the same message.
-    The session is a signed `HttpOnly` cookie (12 h); staff and pending are looked up again on each request, so approval,
-    rejection and removal apply at once. Limits: 5 failed logins per 10 minutes per address and email, 3 sign-ups per hour
-    per address. With no owner configured, admin actions answer 403. Without a server (Vercel) the Dashboard opens with a
+17. **Admin login** (`server/auth.ts`, `server/routes/auth.ts`, `src/pages/Login.tsx`, `src/pages/Admin.tsx`): there is exactly
+    one admin, from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (never in the database). No sign-up, no staff, no pending accounts, no
+    demo account: the user decided on owner only. `requireOwner` guards verify, resolve and reset demo; everyone else can
+    read and report. Passwords use scrypt with a salt, comparison is constant time, every failed login gives the same
+    message. The session is a signed `HttpOnly` cookie (12 h). 5 failed logins per 10 minutes per address and email
+    are blocked. With no admin configured, admin actions answer 403. Without a server (Vercel) the Dashboard opens with a
     banner saying changes only affect this browser: a password cannot be checked there, so it is not faked.
     Tests use made-up credentials, an in-memory database and an injected clock.

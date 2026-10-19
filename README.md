@@ -20,7 +20,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm or clear a report; clearing restores the route instantly.
-- **Dashboard** (`#/admin`), behind a login. Filter reports, verify or resolve them, see how many paths are affected, and (for the owner) approve people who sign up.
+- **Dashboard** (`#/admin`), behind a login. Filter reports, verify or resolve them, and see how many paths are affected.
 - **Works offline.** Without the server, reports live in the browser (localStorage). When the server is up,
   reports are shared between devices.
 
@@ -100,9 +100,8 @@ All optional. Server variables go in `.env` (git-ignored, never commit it) or th
 | `PORT` | server | API port. Default `8787`. |
 | `DB_PATH` | server | SQLite file. Default `server/data/reachable.db`. |
 | `UPLOADS_DIR` | server | Folder for uploaded photos. Default `uploads/`. |
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | server | The owner's Dashboard login (see [Dashboard login](#dashboard-login)). Without both, every admin action is locked. Use a password of 10 characters or more. |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | server | The admin's Dashboard login (see [Dashboard login](#dashboard-login)). Without both, every admin action is locked. Use a long password. |
 | `SESSION_SECRET` | server | A long random string that signs the login cookie. If empty, a new one is made at each start and everyone is signed out whenever the server restarts. |
-| `DEMO_LOGIN_EMAIL`, `DEMO_LOGIN_PASSWORD` | server | Optional public demo account, shown on the login page for judges. Use made-up values. |
 | `CORS_ORIGIN` | server | Allowed browser origin if the frontend is hosted elsewhere. Default: any. |
 | `VITE_API_URL` | frontend build | API origin if the frontend is hosted elsewhere (for example on Vercel). Leave empty for same origin. |
 
@@ -183,24 +182,20 @@ npm run demo:check
 
 The **Admin** button at the top right opens the login page. On the shared server (Render) the Dashboard needs a login:
 
-- **Owner:** one admin, set with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. The owner can verify and resolve reports, approve or
-  reject sign-ups, remove people and reset the demo.
-- **Sign up:** anyone can ask for an account with an email and a password (10 characters or more). It stays **pending** and
-  cannot touch reports until the owner approves it on the Dashboard under *Access requests*. No email is sent, so the
-  approval is the safeguard. Approved people can verify and resolve reports.
-- **Demo account:** if `DEMO_LOGIN_EMAIL` and `DEMO_LOGIN_PASSWORD` are set, the login page shows them, labelled, for judges.
-  It can verify and resolve demo reports but cannot approve people or reset the demo.
-
-Set them on Render under the service's **Environment** settings (and in `.env` locally), never in the repo. Passwords are hashed
-with scrypt and never returned. The login cookie is `HttpOnly` and lasts 12 hours. Five wrong logins in ten minutes lock that
-address and email out for a while, and sign-ups are limited to three an hour per address. Sign-ups are stored in the
-database, so on Render's free plan they reset when the service restarts.
+- There is **one admin**, set with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Only that login can verify or resolve reports and reset
+  the demo. There is no sign-up and no other kind of account, so nobody else can get in. Everyone else can still read and
+  report without an account.
+- Set them on Render under the service's **Environment** settings (and in `.env` locally), never in the repo. The
+  password is hashed with scrypt and never returned. The login cookie is `HttpOnly` and lasts 12 hours. Five wrong logins in
+  ten minutes lock that address and email out for a while.
+- Set `SESSION_SECRET` too (a long random string). Without it, a new one is made at each start and you are signed out
+  whenever the server restarts, which the free Render plan does often.
 
 **On Vercel** there is no server, so a password cannot be checked for real. The Admin button and Dashboard still open there,
 with a note that changes only affect reports saved in that browser.
 
-The rehearsal check signs in as the owner (it reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from the environment or `.env`),
-because resetting the demo is the owner's job.
+The rehearsal check signs in as the admin (it reads `ADMIN_EMAIL` and `ADMIN_PASSWORD` from the environment or `.env`),
+because resetting the demo needs the login.
 
 ## Tests
 
@@ -208,7 +203,7 @@ because resetting the demo is the owner's job.
 npm test
 ```
 
-134 Vitest tests, including the login tests in `server/auth.test.ts` and `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
+131 Vitest tests, including the login tests in `server/auth.test.ts` and `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
 tests cover trust and freshness, the demo seed data, the classifiers and the API. Server tests use an
 in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The
 real classifiers are tested with stand-ins (a local fake OpenRouter server and a fake CLIP model), so the tests never need a key, a download or the internet.
@@ -239,17 +234,12 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 | POST | `/reports` | multipart: `pathId, category, severity, confidence, aiCategory, reporterId, description, photo` | New report; photo saved to `uploads/` |
 | POST | `/reports/:id/confirm` | `{ voterId }` | "Still there" |
 | POST | `/reports/:id/clear` | `{ voterId }` | "Cleared" |
-| POST | `/reports/:id/verify` | | Admin verify (owner, approved admin or demo account) |
-| POST | `/reports/:id/resolve` | | Admin resolve (same) |
-| GET | `/auth/config` | | Whether login is set up, whether sign-up is open, and the demo login if one is set |
+| POST | `/reports/:id/verify` | | Admin verify (needs the login) |
+| POST | `/reports/:id/resolve` | | Admin resolve (needs the login) |
+| GET | `/auth/config` | | Whether admin login is set up |
 | POST | `/auth/login`, `/auth/logout` | `{ email, password }` | Start or end the session cookie |
 | GET | `/auth/me` | | Who is signed in |
-| POST | `/auth/signup` | `{ email, password }` | Ask for an account (pending until approved) |
-| GET | `/auth/users` | | Owner only: the sign-ups |
-| POST | `/auth/users/:id/approve`, `/reject`, `/remove` | | Owner only |
-| GET | `/route?from=&to=&profile=` | | Route result from `src/core`. `profile` is one id or a comma list, e.g. `wheelchair,low_vision` |
-| POST | `/classify` | multipart: `photo`, `context` | Category suggestion (OpenRouter, CLIP or simulated) |
-| POST | `/demo/reset` | | Owner only: restore the example reports |
+| POST | `/demo/reset` | | Admin only: restore the example reports |
 
 ## Project structure
 
@@ -299,7 +289,7 @@ the app switches to the server's data mid-demo.
 
 - The **simulated classifier** does not look at the picture. It uses the file name, the shape of the path and a
   hash of the image, so the demo is repeatable. It is always labelled **"AI suggestion (demo)"**.
-- Visitors are identified by an anonymous id in the browser (no accounts). Only the Dashboard has a login, and sign-up emails are not verified, so the owner's approval is what keeps strangers out.
+- Visitors are identified by an anonymous id in the browser (no accounts). Only the Dashboard has a login, for the one admin.
 - The campus is **fictional**; there is no GPS or indoor map.
 - The map is an **illustration**, and says so on screen. Places, roads and their links come from `data/campus.json`;
   the pond and the trees are decoration, drawn the same way every time (`src/components/mapDecor.ts`) and never used by routing.

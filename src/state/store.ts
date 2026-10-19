@@ -19,7 +19,6 @@ import {
   apiLogout,
   apiMe,
   apiResetDemo,
-  apiSignup,
   apiSnapshot,
   apiVote,
   isUnreachable,
@@ -240,11 +239,11 @@ export async function loadAuth(): Promise<void> {
     if (state.source === 'api') setState({ auth: { ready: true, config, user: me.user } })
   } catch {
     // An older server without login: leave the Dashboard as it was.
-    if (state.source === 'api') setState({ auth: { ready: true, config: { configured: false, signupOpen: false, demo: null }, user: null } })
+    if (state.source === 'api') setState({ auth: { ready: true, config: { configured: false }, user: null } })
   }
 }
 
-/** Refreshes who is signed in (an owner may have approved this person since the page loaded). */
+/** Refreshes who is signed in (the session may have ended). */
 async function refreshMe(): Promise<void> {
   if (state.source !== 'api' || !state.auth.ready) return
   try {
@@ -265,16 +264,6 @@ export async function login(email: string, password: string): Promise<string | n
     return null
   } catch (error) {
     return error instanceof Error ? error.message : 'Could not sign in.'
-  }
-}
-
-/** Asks for an admin account. The owner has to approve it. Returns an error message, or null on success. */
-export async function signup(email: string, password: string): Promise<string | null> {
-  try {
-    await apiSignup(email, password)
-    return null
-  } catch (error) {
-    return error instanceof Error ? error.message : 'Could not sign up.'
   }
 }
 
@@ -537,9 +526,9 @@ export function adminResolve(reportId: string): Promise<string | null> {
  * when it is reachable (so every browser sees the reset), otherwise this browser's copy.
  */
 export async function resetDemo(): Promise<void> {
-  // On the shared server only the owner may wipe every report. Say so before changing anything here.
-  if (state.source === 'api' && state.auth.user?.role !== 'owner') {
-    notify(state.auth.user ? 'Only the owner can reset the demo.' : 'Sign in as the owner to reset the demo.')
+  // On the shared server only the signed-in admin may wipe every report. Say so before changing anything here.
+  if (state.source === 'api' && !state.auth.user) {
+    notify('Sign in as the admin to reset the demo.')
     return
   }
   writeVersion++

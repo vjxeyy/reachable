@@ -119,7 +119,7 @@ function main(): void {
     console.log(chosen.description)
     console.log(
       auth.configured
-        ? `Admin login is set up${auth.demo ? ', with a demo account on the login page' : ''}.`
+        ? 'Admin login is set up.'
         : 'Admin login is NOT set up (set ADMIN_EMAIL and ADMIN_PASSWORD): admin actions are locked.',
     )
     if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length < 10) {

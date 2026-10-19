@@ -4,7 +4,7 @@
 //   npm run demo:check -- https://my-api.example.com
 //
 // It resets the demo before and after, so it removes any reports on that server. Use it on a
-// demo or local server only. Resetting needs the owner login, so it signs in first with ADMIN_EMAIL and
+// demo or local server only. Resetting needs the admin login, so it signs in first with ADMIN_EMAIL and
 // ADMIN_PASSWORD, taken from the environment or from .env (the same values the server uses).
 
 try {
@@ -17,7 +17,7 @@ const base = (process.argv[2] ?? process.env.API_URL ?? 'http://localhost:8787')
 const query = { from: 'library', to: 'hostel', profile: 'wheelchair' }
 const voterId = 'demo-check-passer-by'
 let failed = false
-/** The owner's session cookie, once signed in. */
+/** The admin's session cookie, once signed in. */
 let cookie = ''
 
 async function call(method, path, body) {
@@ -35,7 +35,7 @@ async function call(method, path, body) {
   return data
 }
 
-/** Resetting the demo is the owner's job, so sign in first. */
+/** Resetting the demo needs the admin login, so sign in first. */
 async function signIn() {
   const email = process.env.ADMIN_EMAIL
   const password = process.env.ADMIN_PASSWORD

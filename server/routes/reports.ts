@@ -17,7 +17,7 @@ import {
   updateReportTimes,
   type DB,
 } from '../db'
-import { requireStaff } from '../auth'
+import { requireOwner } from '../auth'
 import { HttpError, requireString, timeFrom, type ServerContext } from './context'
 
 const PHOTO_TYPES: Record<string, string> = {
@@ -133,9 +133,9 @@ export function reportsRouter(ctx: ServerContext): Router {
   vote('still_there')
   vote('cleared')
 
-  // Admin actions: the owner, approved staff and the demo account (see server/auth.ts).
-  const staff = requireStaff(ctx)
-  router.post('/reports/:id/verify', staff, (req, res) => {
+  // Admin actions: only the signed-in owner (see server/auth.ts).
+  const owner = requireOwner(ctx)
+  router.post('/reports/:id/verify', owner, (req, res) => {
     const report = findReport(ctx, req)
     const at = timeFrom(req)
     if (report.clearedAt !== null) throw new HttpError(409, 'This report is already cleared.')
@@ -143,7 +143,7 @@ export function reportsRouter(ctx: ServerContext): Router {
     res.json(snapshot(db, campus.areaId, at))
   })
 
-  router.post('/reports/:id/resolve', staff, (req, res) => {
+  router.post('/reports/:id/resolve', owner, (req, res) => {
     const report = findReport(ctx, req)
     const at = timeFrom(req)
     if (report.clearedAt === null) updateReportTimes(db, report.id, { clearedAt: at })

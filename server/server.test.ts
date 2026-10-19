@@ -19,7 +19,7 @@ import { seedDemoIfNew } from './routes/demo'
 const campus = loadCampus(campusData)
 // Made-up test login. Every request below carries the owner's session, so admin actions are allowed.
 const auth = createAuth({ ownerEmail: 'owner@test.example', ownerPassword: 'test-owner-password', sessionSecret: 'test-secret' })
-const ownerCookie = `reachable_session=${auth.sign({ email: 'owner@test.example', kind: 'owner' })}`
+const ownerCookie = `reachable_session=${auth.sign('owner@test.example')}`
 
 let db: DB
 let server: Server

@@ -1,18 +1,14 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
-import { login, logout, signup, useStore } from '../state/store'
+import { login, logout, useStore } from '../state/store'
 
-type Mode = 'login' | 'signup'
-
-/** Admin login and sign-up. Sign-ups wait for the owner's approval. */
+/** The admin's login. There is one admin and no sign-up. */
 export function Login() {
   const { source, auth } = useStore()
-  const [mode, setMode] = useState<Mode>('login')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [sent, setSent] = useState(false)
 
   if (source === 'connecting') {
     return (
@@ -55,16 +51,11 @@ export function Login() {
   }
 
   if (auth.user) {
-    const { email: who, role } = auth.user
     return (
       <Shell>
         <p>
-          Signed in as <strong>{who}</strong>
-          {role === 'owner' ? ' (owner)' : role === 'pending' ? ' (waiting for approval)' : ' (admin)'}.
+          Signed in as <strong>{auth.user.email}</strong>.
         </p>
-        {role === 'pending' && (
-          <p className="muted">The owner has to approve your account before you can use the Dashboard.</p>
-        )}
         <div className="row">
           <a className="btn" href="#/admin">
             Open the Dashboard
@@ -83,8 +74,7 @@ export function Login() {
     )
   }
 
-  const { config } = auth
-  if (!config?.configured) {
+  if (!auth.config?.configured) {
     return (
       <Shell>
         <p>Admin login is not set up on this server yet, so nobody can sign in.</p>
@@ -98,57 +88,27 @@ export function Login() {
     if (busy) return
     setBusy(true)
     setError(null)
-    if (mode === 'login') {
-      const problem = await login(email, password)
-      if (problem) setError(problem)
-      else window.location.hash = '#/admin'
-    } else {
-      const problem = await signup(email, password)
-      if (problem) setError(problem)
-      else {
-        setSent(true)
-        setMode('login')
-        setPassword('')
-      }
-    }
+    const problem = await login(email, password)
+    if (problem) setError(problem)
+    else window.location.hash = '#/admin'
     setBusy(false)
   }
 
   return (
     <Shell>
-      {config.signupOpen && (
-        <div className="toggle-row" role="group" aria-label="Log in or sign up">
-          <button type="button" className={`btn btn-small ${mode === 'login' ? '' : 'btn-quiet'}`} aria-pressed={mode === 'login'} onClick={() => { setMode('login'); setError(null) }}>
-            Log in
-          </button>
-          <button type="button" className={`btn btn-small ${mode === 'signup' ? '' : 'btn-quiet'}`} aria-pressed={mode === 'signup'} onClick={() => { setMode('signup'); setError(null); setSent(false) }}>
-            Sign up
-          </button>
-        </div>
-      )}
-
-      {mode === 'signup' && (
-        <p className="muted small">An admin has to approve your account before you can use the Dashboard.</p>
-      )}
-      {sent && (
-        <p className="notice" role="status">
-          Request sent. You can sign in once an admin approves it.
-        </p>
-      )}
-
+      <p className="muted small">Only the admin can sign in. Everyone else can still read and report without an account.</p>
       <form className="login-form" onSubmit={onSubmit}>
         <label className="field">
           <span>Email</span>
           <input type="email" autoComplete="username" required value={email} onChange={(e) => setEmail(e.target.value)} />
         </label>
         <label className="field">
-          <span>Password{mode === 'signup' ? ' (at least 10 characters)' : ''}</span>
+          <span>Password</span>
           <span className="pw-row">
             <input
               type={showPassword ? 'text' : 'password'}
-              autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
               required
-              minLength={mode === 'signup' ? 10 : undefined}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -163,38 +123,9 @@ export function Login() {
           </p>
         )}
         <button type="submit" className="btn submit-btn" disabled={busy}>
-          {busy ? 'Please wait' : mode === 'login' ? 'Log in' : 'Request an account'}
+          {busy ? 'Please wait' : 'Log in'}
         </button>
       </form>
-
-      {config.demo && (
-        <div className="demo-login">
-          <h2>Demo account for judges</h2>
-          <p className="muted small">
-            This is a made-up login for the fictional campus, shown here on purpose. It can verify and resolve demo
-            reports, but it cannot approve people or reset the demo.
-          </p>
-          <dl>
-            <dt>Email</dt>
-            <dd>{config.demo.email}</dd>
-            <dt>Password</dt>
-            <dd>{config.demo.password}</dd>
-          </dl>
-          <button
-            type="button"
-            className="btn btn-ghost btn-small"
-            onClick={() => {
-              setMode('login')
-              setEmail(config.demo?.email ?? '')
-              setPassword(config.demo?.password ?? '')
-              setError(null)
-              setSent(false)
-            }}
-          >
-            Fill in the demo login
-          </button>
-        </div>
-      )}
     </Shell>
   )
 }

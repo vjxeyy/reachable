@@ -103,38 +103,19 @@ export function apiClassify(photo: Blob, fileName: string, context: unknown): Pr
 
 // ---------- Admin login ----------
 
-export type Role = 'owner' | 'staff' | 'pending'
-
 export interface AuthUser {
   email: string
-  role: Role
-  /** The public demo account. */
-  demo: boolean
 }
 
 export interface AuthConfig {
-  /** An owner is set up on the server. */
+  /** An admin is set up on the server. */
   configured: boolean
-  signupOpen: boolean
-  /** The public demo login, shown on the login page on purpose. */
-  demo: { email: string; password: string } | null
-}
-
-export interface AccessUser {
-  id: string
-  email: string
-  status: 'pending' | 'approved' | 'rejected'
-  createdAt: number
 }
 
 export const apiAuthConfig = () => request<AuthConfig>('GET', '/api/auth/config', undefined, 4000)
 export const apiMe = () => request<{ user: AuthUser | null }>('GET', '/api/auth/me', undefined, 4000)
 export const apiLogin = (email: string, password: string) => request<{ user: AuthUser }>('POST', '/api/auth/login', { email, password })
-export const apiSignup = (email: string, password: string) => request<{ ok: true }>('POST', '/api/auth/signup', { email, password })
 export const apiLogout = () => request<{ ok: true }>('POST', '/api/auth/logout', {})
-export const apiUsers = () => request<{ users: AccessUser[] }>('GET', '/api/auth/users')
-export const apiUserAction = (id: string, action: 'approve' | 'reject' | 'remove') =>
-  request<{ users: AccessUser[] }>('POST', `/api/auth/users/${encodeURIComponent(id)}/${action}`, {})
 
 /** Server photo paths need the API origin when the frontend is hosted elsewhere. */
 export function photoSrc(url: string | null): string | null {
