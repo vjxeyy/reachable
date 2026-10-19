@@ -104,3 +104,32 @@ export function StatusIcon({ status, size }: IconProps & { status: ReportStatus 
   if (status === 'unverified') return <RingIcon size={size} />
   return <CheckIcon size={size} />
 }
+
+export function MapIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={1.8}>
+      <path d="M3 6.5l6-2.5 6 2.5 6-2.5v13.5l-6 2.5-6-2.5-6 2.5z" />
+      <path d="M9 4v13.5M15 6.5V20" />
+    </svg>
+  )
+}
+
+export function FlagIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={1.8}>
+      <path d="M5 21V4" />
+      <path d="M5 4h12l-2.5 4 2.5 4H5" />
+    </svg>
+  )
+}
+
+export function GridIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={1.8}>
+      <rect x="4" y="4" width="6.5" height="6.5" rx="1.2" />
+      <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2" />
+      <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2" />
+      <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2" />
+    </svg>
+  )
+}

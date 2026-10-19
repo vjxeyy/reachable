@@ -28,12 +28,15 @@ type Analysis =
 
 interface FormProps {
   campus: Campus
-  pathId: string
+  /** The road, or null while the person has not chosen one yet (every step still shows). */
+  pathId: string | null
+  /** Number shown on the first step, so a step placed above the form can be number 1. */
+  firstStep?: number
   onSubmitted: (report: Report) => void
 }
 
-export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
-  const path = graphFor(campus).pathById.get(pathId)
+export function ReportForm({ campus, pathId, firstStep = 1, onSubmitted }: FormProps) {
+  const path = pathId ? graphFor(campus).pathById.get(pathId) : undefined
   const [photo, setPhoto] = useState<PreparedPhoto | null>(null)
   const [analysis, setAnalysis] = useState<Analysis>({ state: 'idle' })
   const [noPhoto, setNoPhoto] = useState(false)
@@ -82,7 +85,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
   }
 
   async function submit() {
-    if (!category || !severity || saving) return
+    if (!pathId || !category || !severity || saving) return
     setSaving(true)
     setSaveError(null)
     const result = await addReport({
@@ -103,7 +106,15 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
     if (file) void analysePhoto(() => preparePhoto(file, file.name))
   }
 
-  const canSubmit = category !== null && severity !== null && analysis.state !== 'working' && !saving
+  // A suggestion made before a road was chosen is redone with the road's facts, unless the person already answered.
+  useEffect(() => {
+    if (!photo || !pathId || analysis.state !== 'done' || category !== null) return
+    void analysePhoto(async () => photo)
+    // Only a change of road should trigger this.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathId])
+
+  const canSubmit = pathId !== null && category !== null && severity !== null && analysis.state !== 'working' && !saving
 
   return (
     <form
@@ -113,7 +124,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         void submit()
       }}
     >
-      <Step n={1} title="Photo">
+      <Step n={firstStep} title="Photo">
         {photo ? (
           <div className="photo-preview">
             <img src={photo.dataUrl} alt={isSample(photo) ? 'Sample drawing of the problem' : 'Photo of the problem'} />
@@ -155,7 +166,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         {photoError && <p className="error">{photoError}</p>}
       </Step>
 
-      <Step n={2} title="What is the problem?">
+      <Step n={firstStep + 1} title="What is the problem?">
         {analysis.state === 'working' && (
           <p className="analysing" role="status">
             <span className="spinner" aria-hidden="true" /> Analysing photo…
@@ -220,7 +231,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         )}
       </Step>
 
-      <Step n={3} title="How bad is it?">
+      <Step n={firstStep + 2} title="How bad is it?">
         <div className="severity-grid">
           {(['blocked', 'partial'] as const).map((s) => (
             <label key={s} className={`severity-option${severity === s ? ' is-active' : ''}`}>
@@ -240,7 +251,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         </div>
       </Step>
 
-      <Step n={4} title="Anything to add? (optional)">
+      <Step n={firstStep + 3} title="Anything to add? (optional)">
         <label className="field">
           <span className="visually-hidden">Description</span>
           <textarea
@@ -258,15 +269,24 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         route outright only after 2 more people confirm them or an admin verifies them.
       </p>
       {saveError && <p className="error">{saveError}</p>}
+      {!canSubmit && !saving && analysis.state !== 'working' && (
+        <p className="muted small" role="status">
+          Still needed:{' '}
+          {[pathId === null && 'the road', category === null && 'what the problem is', severity === null && 'how bad it is']
+            .filter(Boolean)
+            .join(', ')}
+          .
+        </p>
+      )}
       <button type="submit" className="btn submit-btn" disabled={!canSubmit}>
-        {saving ? 'Saving…' : `Submit report on ${path ? describePath(campus, path.id) : 'this path'}`}
+        {saving ? 'Saving…' : path ? `Submit report on ${describePath(campus, path.id)}` : 'Choose a road first'}
       </button>
     </form>
   )
 
 }
 
-function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
+export function Step({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
     <fieldset className="step">
       <legend>

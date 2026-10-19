@@ -15,8 +15,8 @@ export interface MapMarker {
 
 interface Props {
   campus: Campus
-  /** The ticked profiles; paths the combination cannot use are faded. */
-  profiles: readonly ProfileId[]
+  /** The ticked profiles; paths the combination cannot use are faded. Leave out to show every road alike. */
+  profiles?: readonly ProfileId[]
   route: Route | null
   /** Unverified option, drawn only when the user asks to see it. */
   caution: Route | null
@@ -25,6 +25,8 @@ interface Props {
   markers?: MapMarker[]
   selectedPathId?: string | null
   onPathSelect?: (pathId: string) => void
+  /** What tapping a road does, for screen readers. */
+  actionLabel?: string
 }
 
 const PAD = 24
@@ -143,9 +145,9 @@ function Place({ kind }: { kind: NodeKind }) {
   }
 }
 
-export function CampusMap({ campus, profiles, route, caution, from, to, markers = [], selectedPathId, onPathSelect }: Props) {
+export function CampusMap({ campus, profiles, route, caution, from, to, markers = [], selectedPathId, onPathSelect, actionLabel = 'Report a problem' }: Props) {
   const nodes = new Map(campus.nodes.map((n) => [n.id, n]))
-  const prof = resolveProfile(profiles)
+  const prof = profiles ? resolveProfile(profiles) : null
   const routeKey = route ? route.pathIds.join('>') : ''
   const onRoute = new Set(route?.nodeIds ?? [])
   const decor = useMemo(() => mapDecor(campus), [campus])
@@ -181,10 +183,10 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
           const a = nodes.get(path.from)
           const b = nodes.get(path.to)
           if (!a || !b) return null
-          const excluded = hardExclusionReason(prof, path)
+          const excluded = prof ? hardExclusionReason(prof, path) : null
           const kind = pathKind(path)
           const label = `${a.name} to ${b.name}, ${path.lengthM} m${path.stepFree ? '' : ', steps'}${
-            excluded ? `, not usable with ${prof.name} (${excluded})` : ''
+            excluded && prof ? `, not usable with ${prof.name} (${excluded})` : ''
           }`
           return (
             <g key={path.id} className={`path path-${kind}${excluded ? ' path-excluded' : ''}${selectedPathId === path.id ? ' path-selected' : ''}`}>
@@ -199,7 +201,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
                   className="path-hit"
                   role="button"
                   tabIndex={0}
-                  aria-label={`Report a problem: ${label}`}
+                  aria-label={`${actionLabel}: ${label}`}
                   onClick={() => onPathSelect(path.id)}
                   onKeyDown={(e) => onKeyActivate(e, () => onPathSelect(path.id))}
                 >
@@ -247,7 +249,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
           const badge = badgeText(pathKind(path), path.slopePct, path.widthM)
           if (!a || !b || !badge) return null
           const mid = roadSpot(a, b, campus, 4)
-          const excluded = hardExclusionReason(prof, path) !== null
+          const excluded = prof ? hardExclusionReason(prof, path) !== null : false
           return (
             <text key={path.id} x={mid.x + 14} y={mid.y - 14} className={`path-badge${excluded ? ' path-excluded' : ''}`}>
               {badge}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { FlagIcon, GridIcon, MapIcon } from './components/icons'
 import { formatDuration } from './components/labels'
 import { Admin } from './pages/Admin'
 import { Home } from './pages/Home'
@@ -59,10 +60,17 @@ function Toast() {
   )
 }
 
-function DemoControls() {
+/** Tools for whoever is presenting: they are not part of using the app. */
+function DemoFooter() {
   const { timeOffsetMs } = useStore()
   return (
-    <div className="demo-controls" aria-label="Demo controls">
+    <footer className="demo-footer">
+      <h2>Demo tools</h2>
+      <p className="muted small">
+        Only for presenting. Reports expire after a set time, so jump the clock ahead to show one expiring, or reset
+        to bring back the example reports.
+      </p>
+      <div className="demo-controls" aria-label="Demo controls">
       <span className={`clock${timeOffsetMs > 0 ? ' clock-ahead' : ''}`} aria-live="polite">
         {timeOffsetMs > 0 ? `Demo clock: now + ${formatDuration(timeOffsetMs)}` : 'Clock: now'}
       </span>
@@ -83,7 +91,8 @@ function DemoControls() {
       >
         Reset demo
       </button>
-    </div>
+      </div>
+    </footer>
   )
 }
 
@@ -100,21 +109,21 @@ function App() {
         </a>
         <nav className="nav" aria-label="Pages">
           <a href="#/" aria-current={page === 'map' ? 'page' : undefined}>
-            Map
+            <MapIcon /> Campus map
           </a>
           <a href="#/report" aria-current={page === 'report' ? 'page' : undefined}>
-            Report obstacle
+            <FlagIcon /> Report obstacle
           </a>
           <a href="#/admin" aria-current={page === 'admin' ? 'page' : undefined}>
-            Admin
+            <GridIcon /> Dashboard
           </a>
         </nav>
         <SourceBadge />
-        <DemoControls />
       </header>
       <main className="main">
         {page === 'admin' ? <Admin /> : page === 'report' ? <Report /> : <Home />}
       </main>
+      <DemoFooter />
       <Toast />
     </div>
   )

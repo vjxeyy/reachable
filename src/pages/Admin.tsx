@@ -42,7 +42,7 @@ export function Admin() {
     <div className="admin">
       <header className="admin-head">
         <div>
-          <h1>Facilities dashboard</h1>
+          <h1>Dashboard</h1>
           <p className="muted">Verify reports to make them hard blocks, or resolve them once fixed. Changes reach routes at once.</p>
         </div>
       </header>

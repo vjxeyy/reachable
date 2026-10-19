@@ -1,13 +1,13 @@
 import { useMemo, useState } from 'react'
 import { CampusMap, type MapMarker } from '../components/CampusMap'
 import { ReportSheet } from '../components/ReportForm'
-import { ReportList, VoteButtons } from '../components/ReportList'
-import { TrustBadge } from '../components/TrustBadge'
+import { ReportList } from '../components/ReportList'
 import { RoutePanel, RouteSummary } from '../components/RoutePanel'
 import { findRoute } from '../core/route'
-import { isActive, withDerivedStatus } from '../core/trust'
+import { isActive } from '../core/trust'
 import type { Report, ReportStatus } from '../core/types'
-import { campus, castVote, notify, setSelection, useNow, useStore, voteBlocked } from '../state/store'
+import { campus, notify, setSelection, useStore } from '../state/store'
+import { useReportViews } from './reportViews'
 
 const STATUS_RANK: Record<ReportStatus, number> = { verified: 3, unverified: 2, outdated: 1, cleared: 0 }
 
@@ -26,9 +26,9 @@ function markersFor(reports: Report[]): MapMarker[] {
 }
 
 export function Home() {
-  const { reports, confirmations, selection } = useStore()
+  const { selection } = useStore()
   const { profiles, from, to } = selection
-  const now = useNow()
+  const { reports, confirmations, now, live, visible, renderStatus, renderActions } = useReportViews()
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
 
@@ -36,25 +36,8 @@ export function Home() {
     () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile: profiles }) : null),
     [reports, confirmations, now, from, to, profiles],
   )
-  const live = useMemo(
-    () => withDerivedStatus(reports, confirmations, now).sort((a, b) => b.createdAt - a.createdAt),
-    [reports, confirmations, now],
-  )
-  const visible = live.filter((r) => r.status !== 'cleared')
   const activeCount = live.filter((r) => isActive(r.status)).length
   const markers = useMemo(() => markersFor(live), [live])
-
-  const renderStatus = (report: Report) => <TrustBadge report={report} confirmations={confirmations} now={now} />
-  const renderActions = (report: Report) => (
-    <VoteButtons
-      report={report}
-      blockedReason={(vote) => voteBlocked(report, vote)}
-      onVote={async (vote) => {
-        const problem = await castVote(report.id, vote)
-        notify(problem ?? (vote === 'cleared' ? 'Marked cleared. Routes updated.' : 'Thanks, confirmation added.'))
-      }}
-    />
-  )
 
   const route = result?.status === 'ok' ? result.route : null
   const option = result?.status === 'no_verified_route' ? result.alternative : null

@@ -90,22 +90,25 @@ textarea {
   position: sticky;
   top: 0;
   z-index: 10;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  grid-template-areas: 'brand nav source';
   align-items: center;
-  gap: 8px 16px;
-  padding: 10px 16px;
-  background: var(--surface);
+  gap: 0 16px;
+  padding: 0 20px;
+  background: var(--bg);
   border-bottom: 1px solid var(--border);
 }
 
 .brand {
+  grid-area: brand;
   display: flex;
   align-items: center;
   gap: 10px;
+  padding: 10px 0;
   color: inherit;
   text-decoration: none;
-  margin-right: auto;
+  justify-self: start;
 }
 
 .brand-name {
@@ -116,6 +119,12 @@ textarea {
 .brand-tag {
   color: var(--muted);
   font-size: 0.9rem;
+  white-space: nowrap;
+}
+@media (max-width: 1180px) {
+  .brand-tag {
+    display: none;
+  }
 }
 
 .main {
@@ -161,17 +170,15 @@ textarea {
   grid-area: reports;
 }
 
-@media (max-width: 640px) {
-  /* On a phone the header scrolls away so the map gets the screen. */
+@media (max-width: 700px) {
+  /* On a phone the header scrolls away so the map gets the screen: brand and badge on one row, menu below. */
   .topbar {
     position: static;
-    padding: 8px 12px;
-    gap: 6px 10px;
-  }
-  .demo-controls .btn-small {
-    min-height: 32px;
-    padding: 4px 8px;
-    font-size: 0.82rem;
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'brand source'
+      'nav nav';
+    padding: 0 12px;
   }
 }
 
@@ -1394,6 +1401,20 @@ textarea {
 
 /* ---------- Demo clock ---------- */
 
+.demo-footer {
+  max-width: 1100px;
+  margin: 24px auto 0;
+  padding: 16px 20px 28px;
+  border-top: 1px solid var(--border);
+}
+.demo-footer h2 {
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+.demo-footer p {
+  margin: 0 0 10px;
+  max-width: 60ch;
+}
 .demo-controls {
   display: flex;
   flex-wrap: wrap;
@@ -1415,19 +1436,43 @@ textarea {
 /* ---------- Navigation ---------- */
 
 .nav {
+  grid-area: nav;
   display: flex;
-  gap: 4px;
+  justify-content: center;
+  gap: 8px;
 }
 .nav a {
-  padding: 6px 12px;
-  border-radius: 8px;
-  color: var(--text);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 18px 14px 15px;
+  border-bottom: 3px solid transparent;
+  color: var(--muted);
   text-decoration: none;
   font-weight: 600;
+  white-space: nowrap;
+}
+.nav a:hover {
+  color: var(--text);
 }
 .nav a[aria-current='page'] {
-  background: var(--primary-soft);
+  border-bottom-color: var(--primary);
   color: var(--primary);
+}
+@media (max-width: 700px) {
+  .nav {
+    justify-content: space-around;
+    gap: 0;
+    margin: 0 -12px;
+    border-top: 1px solid var(--border);
+  }
+  .nav a {
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+    padding: 12px 6px 10px;
+    font-size: 0.9rem;
+  }
 }
 
 /* ---------- Admin ---------- */
@@ -1536,6 +1581,8 @@ textarea {
 /* ---------- Data source badge ---------- */
 
 .source {
+  grid-area: source;
+  justify-self: end;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1560,32 +1607,56 @@ textarea {
 /* ---------- Report page ---------- */
 
 .report-page {
-  max-width: 640px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 16px;
+  padding: 24px 20px;
+}
+.report-head {
+  margin-bottom: 18px;
 }
 .page-title {
-  font-size: 1.4rem;
+  font-size: 1.7rem;
   margin-bottom: 6px;
 }
-.report-page .panel > p {
-  margin: 0 0 14px;
+.report-head p {
+  margin: 0;
+  max-width: 62ch;
 }
-.report-where {
-  margin-bottom: 6px;
+.report-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 16px;
+  align-items: start;
 }
-.road-facts {
-  margin: 0 0 14px;
+.report-steps {
+  display: grid;
+  gap: 14px;
 }
-.report-page .report-form {
-  margin-top: 4px;
+.report-feed > p {
+  margin: 4px 0 12px;
+}
+.where-map {
+  margin-top: 10px;
+  max-width: 520px;
+}
+.where-map .campus-map {
+  max-height: none;
+  border-radius: 10px;
 }
 .map-hint a {
   color: var(--primary);
   font-weight: 600;
 }
+@media (max-width: 900px) {
+  .report-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
 @media (max-width: 640px) {
   .report-page {
     padding: 12px;
+  }
+  .page-title {
+    font-size: 1.4rem;
   }
 }
