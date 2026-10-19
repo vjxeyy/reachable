@@ -18,6 +18,9 @@ export const DECAY_MS: Record<Category, number> = {
 /** Independent "still there" confirmations needed to make a report `verified`. */
 export const CONFIRMATIONS_TO_VERIFY = 2
 
+/** A device can say "still there" again only after this long (it refreshes freshness, not the count). */
+export const RECONFIRM_AFTER_MS = 30 * 60 * 1000
+
 function votesFor(report: Report, confirmations: readonly Confirmation[]): Confirmation[] {
   return confirmations.filter((c) => c.reportId === report.id)
 }
@@ -34,11 +37,14 @@ export function confirmationCount(report: Report, confirmations: readonly Confir
   return voters.size
 }
 
-/** When the obstacle was last seen: the report, a "still there" vote or an admin verify. */
+/**
+ * When the obstacle was last seen: the report, an independent "still there" vote or an admin
+ * verify. The reporter cannot keep their own report alive.
+ */
 export function lastConfirmedAt(report: Report, confirmations: readonly Confirmation[]): Timestamp {
   let last = Math.max(report.createdAt, report.lastConfirmedAt, report.adminVerifiedAt ?? 0)
   for (const c of votesFor(report, confirmations)) {
-    if (c.vote === 'still_there') last = Math.max(last, c.at)
+    if (c.vote === 'still_there' && c.voterId !== report.reporterId) last = Math.max(last, c.at)
   }
   return last
 }
@@ -100,4 +106,21 @@ export function withDerivedStatus(
   now: Timestamp,
 ): Report[] {
   return reports.map((r) => ({ ...r, status: deriveStatus(r, confirmations, now) }))
+}
+
+/** Why this device may not cast this vote right now, or null if it may. */
+export function voteBlockReason(
+  report: Report,
+  confirmations: readonly Confirmation[],
+  voterId: string,
+  vote: Confirmation['vote'],
+  now: Timestamp,
+): string | null {
+  if (clearedAt(report, confirmations) !== null) return 'This report is already cleared.'
+  if (vote === 'cleared') return null
+  if (voterId === report.reporterId) return 'You reported this. Someone else needs to confirm it.'
+  const mine = votesFor(report, confirmations).filter((c) => c.voterId === voterId && c.vote === 'still_there')
+  const latest = Math.max(-Infinity, ...mine.map((c) => c.at))
+  if (now - latest < RECONFIRM_AFTER_MS) return 'You confirmed this recently.'
+  return null
 }

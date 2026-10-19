@@ -4,16 +4,20 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import campusData from '../../data/campus.json'
 import { loadCampus } from '../core/graph'
-import type { Category, Confirmation, Report, Severity } from '../core/types'
+import { voteBlockReason } from '../core/trust'
+import type { Category, Confirmation, Report, Severity, Vote } from '../core/types'
 
 export const campus = loadCampus(campusData)
 
 const DATA_KEY = 'reachable:v1:data'
 const CLIENT_KEY = 'reachable:v1:client'
+const CLOCK_KEY = 'reachable:v1:clock'
 
 export interface StoreState {
   reports: Report[]
   confirmations: Confirmation[]
+  /** Demo clock: how far the app's "now" is ahead of real time. */
+  timeOffsetMs: number
 }
 
 function readStorage(key: string): string | null {
@@ -49,7 +53,12 @@ function loadClientId(): string {
 /** Anonymous id for this browser. Lets the trust rules count independent confirmations. */
 export const clientId = loadClientId()
 
-function loadData(): StoreState {
+function loadOffset(): number {
+  const offset = Number(readStorage(CLOCK_KEY))
+  return Number.isFinite(offset) && offset > 0 ? offset : 0
+}
+
+function loadData(): Pick<StoreState, 'reports' | 'confirmations'> {
   const raw = readStorage(DATA_KEY)
   if (raw) {
     try {
@@ -64,7 +73,7 @@ function loadData(): StoreState {
   return { reports: [], confirmations: [] }
 }
 
-let state: StoreState = loadData()
+let state: StoreState = { ...loadData(), timeOffsetMs: loadOffset() }
 const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void): () => void {
@@ -84,6 +93,7 @@ function setState(patch: Partial<StoreState>): void {
 
 /** Saves to localStorage. If photos fill the quota, drops the oldest photos and tries again. */
 function persist(): void {
+  writeStorage(CLOCK_KEY, String(state.timeOffsetMs))
   const data = { reports: state.reports, confirmations: state.confirmations }
   if (writeStorage(DATA_KEY, JSON.stringify(data))) return
   const reports = [...data.reports]
@@ -99,9 +109,18 @@ export function useStore(): StoreState {
   return useSyncExternalStore(subscribe, getState)
 }
 
-/** Current time used for freshness and report ages. */
+/** Current time used for freshness and report ages, including the demo clock offset. */
 export function now(): number {
-  return Date.now()
+  return Date.now() + state.timeOffsetMs
+}
+
+/** Moves the demo clock forward, e.g. +6 hours to show a report going outdated. */
+export function advanceClock(ms: number): void {
+  setState({ timeOffsetMs: state.timeOffsetMs + ms })
+}
+
+export function resetClock(): void {
+  setState({ timeOffsetMs: 0 })
 }
 
 /** The current time, refreshed every 30 s and on every store change. */
@@ -149,4 +168,28 @@ export function addReport(input: NewReport): Report {
   }
   setState({ reports: [...state.reports, report] })
   return report
+}
+
+/** Why this browser cannot cast the vote now, or null. */
+export function voteBlocked(report: Report, vote: Vote): string | null {
+  return voteBlockReason(report, state.confirmations, clientId, vote, now())
+}
+
+/** "Still there" or "Cleared" from this browser. A cleared vote restores routes at once. */
+export function castVote(reportId: string, vote: Vote): string | null {
+  const report = state.reports.find((r) => r.id === reportId)
+  if (!report) return 'Report not found.'
+  const blocked = voteBlocked(report, vote)
+  if (blocked) return blocked
+  const at = now()
+  const confirmation: Confirmation = { reportId, areaId: report.areaId, voterId: clientId, vote, at }
+  const updated: Report =
+    vote === 'cleared'
+      ? { ...report, clearedAt: at }
+      : { ...report, lastConfirmedAt: Math.max(report.lastConfirmedAt, at) }
+  setState({
+    confirmations: [...state.confirmations, confirmation],
+    reports: state.reports.map((r) => (r.id === reportId ? updated : r)),
+  })
+  return null
 }

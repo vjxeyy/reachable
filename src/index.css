@@ -1115,3 +1115,48 @@ textarea {
     opacity: 0;
   }
 }
+
+/* ---------- Trust badge ---------- */
+
+.trust {
+  display: grid;
+  gap: 2px;
+  font-size: 0.88rem;
+}
+.trust .pill {
+  justify-self: start;
+  margin-left: 0;
+}
+.trust-detail {
+  font-weight: 600;
+}
+.trust-outdated .trust-detail {
+  font-weight: 500;
+  color: var(--muted);
+}
+.trust-meta {
+  font-size: 0.8rem;
+}
+.vote-note {
+  flex-basis: 100%;
+}
+
+/* ---------- Demo clock ---------- */
+
+.demo-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.clock {
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--outdated-soft);
+}
+.clock-ahead {
+  background: #ede9fe;
+  color: #5b21b6;
+}

@@ -61,3 +61,33 @@ export function ReportList({ campus, reports, now, emptyText, showPath = true, o
     </ul>
   )
 }
+
+interface VoteProps {
+  report: Report
+  /** Returns why the vote is not allowed, or null. */
+  blockedReason: (vote: 'still_there' | 'cleared') => string | null
+  onVote: (vote: 'still_there' | 'cleared') => void
+}
+
+/** "Still there" and "Cleared" buttons. Disabled buttons say why. */
+export function VoteButtons({ report, blockedReason, onVote }: VoteProps) {
+  if (report.status === 'cleared') return null
+  const stillReason = blockedReason('still_there')
+  return (
+    <>
+      <button
+        type="button"
+        className="btn btn-quiet btn-small"
+        disabled={stillReason !== null}
+        title={stillReason ?? 'Confirm the obstacle is still there'}
+        onClick={() => onVote('still_there')}
+      >
+        Still there
+      </button>
+      <button type="button" className="btn btn-good btn-small" onClick={() => onVote('cleared')}>
+        Cleared
+      </button>
+      {stillReason && <span className="muted small vote-note">{stillReason}</span>}
+    </>
+  )
+}

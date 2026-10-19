@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CampusMap, type MapMarker } from '../components/CampusMap'
 import { ReportSheet } from '../components/ReportForm'
-import { ReportList } from '../components/ReportList'
+import { ReportList, VoteButtons } from '../components/ReportList'
+import { TrustBadge } from '../components/TrustBadge'
 import { RoutePanel, RouteSummary } from '../components/RoutePanel'
 import { findRoute } from '../core/route'
 import { isActive, withDerivedStatus } from '../core/trust'
 import type { ProfileId, Report, ReportStatus } from '../core/types'
-import { campus, useNow, useStore } from '../state/store'
+import { campus, castVote, useNow, useStore, voteBlocked } from '../state/store'
 
 const STATUS_RANK: Record<ReportStatus, number> = { verified: 3, unverified: 2, outdated: 1, cleared: 0 }
 
@@ -51,6 +52,18 @@ export function Home() {
   const visible = live.filter((r) => r.status !== 'cleared')
   const activeCount = live.filter((r) => isActive(r.status)).length
   const markers = useMemo(() => markersFor(live), [live])
+
+  const renderStatus = (report: Report) => <TrustBadge report={report} confirmations={confirmations} now={now} />
+  const renderActions = (report: Report) => (
+    <VoteButtons
+      report={report}
+      blockedReason={(vote) => voteBlocked(report, vote)}
+      onVote={(vote) => {
+        const problem = castVote(report.id, vote)
+        setToast(problem ?? (vote === 'cleared' ? 'Marked cleared. Routes updated.' : 'Thanks, confirmation added.'))
+      }}
+    />
+  )
 
   const route = result?.status === 'ok' ? result.route : null
   const option = result?.status === 'no_verified_route' ? result.alternative : null
@@ -98,6 +111,7 @@ export function Home() {
           activeReportCount={activeCount}
           showCaution={showCaution}
           onToggleCaution={() => setCautionShownFor(showCaution ? null : optionKey)}
+          onSelectPath={setSelectedPathId}
         />
       </div>
       <div className="area-reports">
@@ -109,6 +123,8 @@ export function Home() {
             now={now}
             emptyText="No reports yet. Tap a path on the map to report a problem."
             onSelectPath={setSelectedPathId}
+            renderStatus={renderStatus}
+            renderActions={renderActions}
           />
         </section>
       </div>
@@ -130,6 +146,8 @@ export function Home() {
             now={now}
             showPath={false}
             emptyText="No live reports on this path."
+            renderStatus={renderStatus}
+            renderActions={renderActions}
           />
         </ReportSheet>
       )}

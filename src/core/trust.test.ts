@@ -4,7 +4,10 @@ import {
   confirmationCount,
   DECAY_MS,
   deriveStatus,
+  lastConfirmedAt,
+  RECONFIRM_AFTER_MS,
   timeUntilOutdatedMs,
+  voteBlockReason,
 } from './trust'
 import { CATEGORIES, type Confirmation, type Report } from './types'
 
@@ -107,5 +110,29 @@ describe('combined confidence', () => {
 
   it('is 1 after an admin verify', () => {
     expect(combinedConfidence(report({ adminVerifiedAt: NOW }), [])).toBe(1)
+  })
+})
+
+describe('voting rules', () => {
+  it('the reporter cannot confirm their own report or keep it fresh', () => {
+    expect(voteBlockReason(report(), [], 'reporter', 'still_there', NOW)).toMatch(/You reported this/)
+    const own = vote('reporter', 'still_there', NOW)
+    expect(lastConfirmedAt(report(), [own])).toBe(NOW - HOUR)
+  })
+
+  it('anyone, including the reporter, can mark it cleared', () => {
+    expect(voteBlockReason(report(), [], 'reporter', 'cleared', NOW)).toBeNull()
+    expect(voteBlockReason(report(), [], 'a', 'cleared', NOW)).toBeNull()
+  })
+
+  it('a device can re-confirm only after the cool-down', () => {
+    const mine = [vote('a', 'still_there', NOW - 1000)]
+    expect(voteBlockReason(report(), mine, 'a', 'still_there', NOW)).toMatch(/recently/)
+    expect(voteBlockReason(report(), mine, 'a', 'still_there', NOW + RECONFIRM_AFTER_MS)).toBeNull()
+    expect(voteBlockReason(report(), mine, 'b', 'still_there', NOW)).toBeNull()
+  })
+
+  it('no votes on a cleared report', () => {
+    expect(voteBlockReason(report({ clearedAt: NOW }), [], 'a', 'still_there', NOW)).toMatch(/already cleared/)
   })
 })

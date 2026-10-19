@@ -125,6 +125,8 @@ Write each decision down here when it is made, so later phases stay consistent.
    `adminVerifiedAt` and `aiCategory`; Confirmation gains `areaId` and `voterId`. Timestamps are epoch ms.
 5. **Independent confirmations** = distinct `voterId`s voting `still_there`, not counting the reporter's own
    device. The original report is not a confirmation, so verified means reporter + 2 others, or an admin.
+   The reporter's own "still there" neither counts nor refreshes freshness. A device can say "still there"
+   again after 30 minutes; that refreshes freshness but still counts once (`voteBlockReason` in trust.ts).
 6. **Freshness**: `lastConfirmedAt` = the latest of the report, a `still_there` vote and an admin verify.
    A verified report also goes outdated if nobody re-confirms it within its decay time.
 7. **Clearing**: one `cleared` vote or an admin resolve clears a report immediately (Phase 4 needs instant

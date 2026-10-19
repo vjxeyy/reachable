@@ -72,10 +72,25 @@ export function RoutePanel({ campus, profile, from, to, onChange }: PanelProps) 
   )
 }
 
-function ImpactLine({ campus, impact, now }: { campus: Campus; impact: ReportImpact; now: number }) {
+interface ImpactProps {
+  campus: Campus
+  impact: ReportImpact
+  now: number
+  onSelectPath?: (pathId: string) => void
+}
+
+function ImpactLine({ campus, impact, now, onSelectPath }: ImpactProps) {
+  const where = describePath(campus, impact.pathId)
   return (
     <li>
-      <strong>{CATEGORY_LABEL[impact.category]}</strong> on {describePath(campus, impact.pathId)}
+      <strong>{CATEGORY_LABEL[impact.category]}</strong> on{' '}
+      {onSelectPath ? (
+        <button type="button" className="link-btn" onClick={() => onSelectPath(impact.pathId)}>
+          {where}
+        </button>
+      ) : (
+        where
+      )}
       <span className={`pill pill-${impact.status}`}>{STATUS_LABEL[impact.status]}</span>
       <span className="muted"> reported {formatAgo(now - impact.createdAt)}</span>
     </li>
@@ -115,10 +130,20 @@ interface SummaryProps {
   activeReportCount: number
   showCaution: boolean
   onToggleCaution: () => void
+  /** Opens a path's reports, e.g. to confirm or clear a block. */
+  onSelectPath?: (pathId: string) => void
 }
 
 /** The route result: the route, why it changed, or the fail-safe message. */
-export function RouteSummary({ campus, result, now, activeReportCount, showCaution, onToggleCaution }: SummaryProps) {
+export function RouteSummary({
+  campus,
+  result,
+  now,
+  activeReportCount,
+  showCaution,
+  onToggleCaution,
+  onSelectPath,
+}: SummaryProps) {
   if (!result) {
     return (
       <section className="panel result result-empty" aria-live="polite">
@@ -148,7 +173,7 @@ export function RouteSummary({ campus, result, now, activeReportCount, showCauti
             </p>
             <ul className="impacts">
               {reroute.because.map((impact) => (
-                <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} />
+                <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} onSelectPath={onSelectPath} />
               ))}
             </ul>
           </div>
@@ -160,7 +185,7 @@ export function RouteSummary({ campus, result, now, activeReportCount, showCauti
             </p>
             <ul className="impacts">
               {route.warnings.map((impact) => (
-                <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} />
+                <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} onSelectPath={onSelectPath} />
               ))}
             </ul>
           </div>
@@ -187,7 +212,7 @@ export function RouteSummary({ campus, result, now, activeReportCount, showCauti
           <p>Reports block every usable path to {toName}. Clearing any one of these would bring a route back:</p>
           <ul className="impacts">
             {result.blockedBy.map((impact) => (
-              <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} />
+              <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} onSelectPath={onSelectPath} />
             ))}
           </ul>
         </>
