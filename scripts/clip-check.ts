@@ -1,4 +1,4 @@
-// Runs the real CLIP model on the three sample photos and prints what it suggests.
+// Runs the real CLIP model on the three sample drawings and prints what it suggests.
 //   npm run clip:check
 // The first run downloads the model (about 90 MB) into server/data/models.
 
@@ -25,6 +25,6 @@ for (const [name, want] of Object.entries(expected)) {
   const result = await classifier.classify({ image: new Uint8Array(jpeg), mimeType: 'image/jpeg', fileName: `${name}.jpg` })
   const ok = result.category === want
   if (!ok) wrong++
-  console.log(`${ok ? '✓' : '✗'} ${name.padEnd(15)} -> ${result.category} ${Math.round(result.confidence * 100)}%  (${Date.now() - t} ms)`)
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${name.padEnd(15)} -> ${result.category} ${Math.round(result.confidence * 100)}%  (${Date.now() - t} ms)`)
 }
 process.exit(wrong ? 1 : 0)

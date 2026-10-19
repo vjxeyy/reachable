@@ -8,8 +8,9 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 
 ## What it does
 
-- **Routes by profile.** Wheelchair, Crutches or Low vision, each with its own hard rules and penalties
-  (steps, width, slope, path length).
+- **Routes by profile, and by combinations of them.** Wheelchair, Crutches or Low vision, each with its own hard
+  rules and penalties (steps, width, slope, path length). Tick more than one (for example Wheelchair and Low vision)
+  and the route follows the strictest rule of each: every hard rule applies and the penalties add up.
 - **Photo reports.** Tap a path, add a photo, and the app suggests what the obstacle is. You confirm or correct it.
 - **Verification-aware routing.** New reports are *unverified*: routes avoid them whenever another way exists.
   A report blocks a path outright only after 2 independent confirmations or an admin verify.
@@ -139,16 +140,17 @@ Either way the user always confirms or corrects the category.
 
 ## The 60-second demo
 
-Start from a fresh load, or press **Reset demo** in the header. Reset restores the 4 example reports, sets the
-clock back to now and clears the route picker.
+Start from a fresh load, or press **Reset demo** in the header. Reset restores the 4 example reports (each is
+tagged **Example**, so nobody mistakes them for real reports), sets the clock back to now and clears the route picker.
+The photo buttons are labelled **Sample drawing**: they are bundled illustrations, not photos.
 
-1. **Route.** Choose **Wheelchair**, From **Library**, To **Hostel**.
+1. **Route.** Choose From **Library**, To **Hostel**, with **Wheelchair** ticked.
    A step-free route appears (460 m, via the Canteen and the hostel ramp).
-2. **Report.** Tap the **Canteen – Hostel ramp** on the map. Tap the **Blocked ramp** sample photo (or take a
+2. **Report.** Tap the **Canteen to Hostel ramp** on the map. Tap **Sample drawing: blocked ramp** (or take a
    real photo). The app shows *AI suggestion (demo): Blocked ramp*. Tap **Looks right**, then **Submit report**.
 3. **Reroute.** The route redraws through Garden Court, with *"Rerouted, 105 m longer than usual, to avoid:
    Blocked ramp … Unverified, reported just now"*.
-4. **Fail-safe.** Tap **Library – Garden Court** on the new route, use the **Flooding** sample, confirm and submit.
+4. **Fail-safe.** Tap **Library to Garden Court** on the new route, use **Sample drawing: flooding**, confirm and submit.
    The app says **"No verified step-free route"** and lists both blocks. No route is drawn. The unverified option
    appears dashed only if you tap *Show unverified option on map*.
 5. **Clear.** Tap the hostel ramp again and press **Cleared** on the report. The original route returns.
@@ -159,6 +161,9 @@ Extras if you have time:
 - **Admin**: verify an unverified report and it becomes a hard block at once. Try Wheelchair, Main Gate to
   Health Centre with a blocked Health Centre ramp, before and after verifying.
 - **Crutches**, Admin Block to Library: uses the gentle Admin steps, which Wheelchair cannot.
+- **Wheelchair and Low vision** together, Library to Hostel, with a *partly blocked* report on the hostel ramp:
+  Wheelchair alone still uses the ramp with a warning, but Low vision treats any report as a block, so the
+  combination goes round through Garden Court.
 
 ### Rehearsal check
 
@@ -208,7 +213,7 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 | POST | `/reports/:id/clear` | `{ voterId }` | "Cleared" |
 | POST | `/reports/:id/verify` | | Admin verify |
 | POST | `/reports/:id/resolve` | | Admin resolve |
-| GET | `/route?from=&to=&profile=` | | Route result from `src/core` |
+| GET | `/route?from=&to=&profile=` | | Route result from `src/core`. `profile` is one id or a comma list, e.g. `wheelchair,low_vision` |
 | POST | `/classify` | multipart: `photo`, `context` | Category suggestion (OpenRouter, CLIP or simulated) |
 | POST | `/demo/reset` | | Restore the example reports |
 

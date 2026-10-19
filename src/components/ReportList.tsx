@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { describePath } from '../core/graph'
+import { SEED_REPORTER } from '../core/seed'
 import type { Campus, Report } from '../core/types'
 import { photoSrc } from '../state/api'
 import { CATEGORY_LABEL, formatAgo, STATUS_LABEL } from './labels'
@@ -28,13 +29,18 @@ export function ReportList({ campus, reports, now, emptyText, showPath = true, o
             <img className="report-thumb" src={photoSrc(report.photoUrl) ?? undefined} alt="" loading="lazy" />
           ) : (
             <div className="report-thumb report-thumb-empty" aria-hidden="true">
-              !
+              No photo
             </div>
           )}
           <div className="report-body">
             <div className="report-title">
               <strong>{CATEGORY_LABEL[report.category]}</strong>
               <span className="muted small">{report.severity === 'blocked' ? 'blocked' : 'partly blocked'}</span>
+              {report.reporterId === SEED_REPORTER && (
+                <span className="tag-example" title="Made-up report that ships with the demo">
+                  Example
+                </span>
+              )}
             </div>
             {showPath &&
               (onSelectPath ? (

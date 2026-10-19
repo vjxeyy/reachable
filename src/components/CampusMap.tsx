@@ -74,7 +74,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
       role="img"
       aria-label={`Map of ${campus.name}`}
     >
-      <rect x={-PAD} y={-PAD} width={campus.width + PAD * 2} height={campus.height + PAD * 2} rx={28} className="map-bg" />
+      <rect x={-PAD} y={-PAD} width={campus.width + PAD * 2} height={campus.height + PAD * 2} rx={10} className="map-bg" />
 
       <g className="paths">
         {campus.paths.map((path) => {

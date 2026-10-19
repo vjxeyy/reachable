@@ -26,7 +26,7 @@ async function call(method, path, body) {
 const route = () => call('GET', `/api/route?from=${query.from}&to=${query.to}&profile=${query.profile}`)
 
 function check(step, ok, detail) {
-  console.log(`${ok ? '✓' : '✗'} ${step}${detail ? `  (${detail})` : ''}`)
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${step}${detail ? `  (${detail})` : ''}`)
   if (!ok) failed = true
 }
 
@@ -61,13 +61,13 @@ try {
   const name = (pathId) => {
     const p = pathById.get(pathId)
     const node = (id) => campus.nodes.find((n) => n.id === id)?.name ?? id
-    return `${node(p.from)} – ${node(p.to)}`
+    return `${node(p.from)} to ${node(p.to)}`
   }
 
   // 1. Wheelchair, Library to Hostel: a step-free route.
   const r1 = await route()
   check(
-    '1. Wheelchair route Library → Hostel is step-free',
+    '1. Wheelchair route Library to Hostel is step-free',
     r1.status === 'ok' && r1.route.stepFree && r1.route.verification === 'verified',
     r1.status === 'ok' ? `${r1.route.lengthM} m via ${r1.route.pathIds.map(name).join(', ')}` : r1.status,
   )
@@ -122,7 +122,7 @@ try {
   )
 } catch (error) {
   failed = true
-  console.error(`✗ ${error.message}`)
+  console.error(`FAIL ${error.message}`)
   if (String(error.message).includes('fetch failed')) console.error(`  Is the API running at ${base}? Try: npm run server`)
 } finally {
   try {

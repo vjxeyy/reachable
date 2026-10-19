@@ -8,6 +8,7 @@ import {
   timeUntilOutdatedMs,
 } from '../core/trust'
 import type { Confirmation, Report } from '../core/types'
+import { StatusIcon } from './icons'
 import { CATEGORY_LABEL, formatAgo, formatDuration, STATUS_LABEL } from './labels'
 
 interface Props {
@@ -16,8 +17,6 @@ interface Props {
   confirmations: readonly Confirmation[]
   now: number
 }
-
-const ICON = { verified: '✓', unverified: '?', outdated: '◷', cleared: '✓' } as const
 
 /** Status, age and trust details for one report. Never shows a status without its age. */
 export function TrustBadge({ report, confirmations, now }: Props) {
@@ -43,7 +42,7 @@ export function TrustBadge({ report, confirmations, now }: Props) {
   return (
     <div className={`trust trust-${report.status}`}>
       <span className={`pill pill-${report.status}`}>
-        <span aria-hidden="true">{ICON[report.status]}</span> {STATUS_LABEL[report.status]}
+        <StatusIcon status={report.status} size={12} /> {STATUS_LABEL[report.status]}
       </span>
       <span className="trust-detail">{detail}</span>
       <span className="trust-meta muted">

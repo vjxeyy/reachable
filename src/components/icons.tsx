@@ -1,4 +1,4 @@
-import type { ProfileId } from '../core/types'
+import type { ProfileId, ReportStatus } from '../core/types'
 
 interface IconProps {
   size?: number
@@ -43,4 +43,64 @@ export function ProfileIcon({ profile, size }: IconProps & { profile: ProfileId 
   if (profile === 'wheelchair') return <WheelchairIcon size={size} />
   if (profile === 'crutches') return <CrutchesIcon size={size} />
   return <LowVisionIcon size={size} />
+}
+
+const base = {
+  viewBox: '0 0 24 24',
+  'aria-hidden': true,
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 2.5,
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round',
+} as const
+
+export function CheckIcon({ size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <path d="M5 12.5l4.5 4.5L19 7" />
+    </svg>
+  )
+}
+
+export function CloseIcon({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </svg>
+  )
+}
+
+/** Two arrows, up and down: swaps the start and the destination. */
+export function SwapIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <path d="M8 20V5M4.5 8.5L8 5l3.5 3.5" />
+      <path d="M16 4v15M12.5 15.5L16 19l3.5-3.5" />
+    </svg>
+  )
+}
+
+function ClockIcon({ size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </svg>
+  )
+}
+
+function RingIcon({ size = 14 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base}>
+      <circle cx="12" cy="12" r="8" />
+    </svg>
+  )
+}
+
+/** A small mark for a report status. The status word is always shown next to it. */
+export function StatusIcon({ status, size }: IconProps & { status: ReportStatus }) {
+  if (status === 'outdated') return <ClockIcon size={size} />
+  if (status === 'unverified') return <RingIcon size={size} />
+  return <CheckIcon size={size} />
 }

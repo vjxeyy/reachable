@@ -64,6 +64,9 @@ export function Home() {
 
   return (
     <div className="home">
+      <p className="intro">
+        Step-free routes for wheelchair, crutch and low-vision users, redrawn when a barrier is reported or cleared.
+      </p>
       <div className="area-controls">
         <RoutePanel
           campus={campus}

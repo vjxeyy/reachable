@@ -4,7 +4,8 @@ import { describePath, graphFor } from '../core/graph'
 import { CATEGORIES, type Campus, type Category, type Report, type Severity } from '../core/types'
 import { addReport } from '../state/store'
 import { CATEGORY_LABEL } from './labels'
-import { loadSamplePhoto, preparePhoto, SAMPLE_PHOTOS, type PreparedPhoto } from './photo'
+import { CloseIcon } from './icons'
+import { isSample, loadSamplePhoto, preparePhoto, SAMPLE_PHOTOS, type PreparedPhoto } from './photo'
 
 /** Severity a category usually has; the user can change it. */
 const DEFAULT_SEVERITY: Record<Category, Severity> = {
@@ -115,11 +116,14 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
       <Step n={1} title="Photo">
         {photo ? (
           <div className="photo-preview">
-            <img src={photo.dataUrl} alt="Photo of the problem" />
-            <label className="btn btn-quiet btn-small file-btn">
-              Replace photo
-              <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
-            </label>
+            <img src={photo.dataUrl} alt={isSample(photo) ? 'Sample drawing of the problem' : 'Photo of the problem'} />
+            <div className="photo-side">
+              {isSample(photo) && <p className="muted small">Sample drawing, not a real photo.</p>}
+              <label className="btn btn-quiet btn-small file-btn">
+                Replace photo
+                <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
+              </label>
+            </div>
           </div>
         ) : (
           <>
@@ -127,7 +131,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
               Take or upload a photo
               <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
             </label>
-            <p className="muted small">No photo handy? Try a sample:</p>
+            <p className="muted small">No photo handy? Use a sample drawing:</p>
             <div className="sample-row">
               {SAMPLE_PHOTOS.map((s) => (
                 <button key={s.id} type="button" className="btn btn-ghost btn-small" onClick={() => analysePhoto(() => loadSamplePhoto(s.id))}>
@@ -164,7 +168,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
             {category === null && !choosing && (
               <div className="row">
                 <button type="button" className="btn btn-good btn-small" onClick={() => pickCategory(suggestion.category)}>
-                  ✓ Looks right
+                  Looks right
                 </button>
                 <button type="button" className="btn btn-quiet btn-small" onClick={() => setChoosing(true)}>
                   Change
@@ -176,7 +180,7 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         {category !== null && !choosing && (
           <p className="confirmed">
             <span>
-              ✓ <strong>{CATEGORY_LABEL[category]}</strong>
+              <strong>{CATEGORY_LABEL[category]}</strong>
               {suggestion
                 ? category === suggestion.category
                   ? ' (you confirmed the AI suggestion)'
@@ -310,7 +314,7 @@ export function ReportSheet({ campus, pathId, children, onClose, onSubmitted }: 
             <p className="muted small">{facts.join(' · ')}</p>
           </div>
           <button type="button" className="icon-btn" aria-label="Close" onClick={() => ref.current?.close()}>
-            ✕
+            <CloseIcon />
           </button>
         </header>
         {children}

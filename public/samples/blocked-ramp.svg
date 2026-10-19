@@ -30,5 +30,5 @@
     <text x="0" y="-44" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="#d62828" text-anchor="middle">CLOSED</text>
     <rect x="-4" y="-24" width="8" height="90" fill="#555"/>
   </g>
-  <text x="20" y="460" font-family="Arial, sans-serif" font-size="16" fill="#3b3b3b">Sample photo: ramp closed by barriers</text>
+  <text x="20" y="460" font-family="Arial, sans-serif" font-size="16" fill="#3b3b3b">Sample drawing: ramp closed by barriers</text>
 </svg>

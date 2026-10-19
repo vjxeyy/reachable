@@ -25,5 +25,5 @@
     <path d="M-4 -8 v14 h12 l5 12" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/>
     <path d="M-10 -2 a14 14 0 1 0 18 18" stroke="#fff" stroke-width="5" fill="none"/>
   </g>
-  <text x="20" y="460" font-family="Arial, sans-serif" font-size="16" fill="#eeeeee">Sample photo: car parked across the footpath</text>
+  <text x="20" y="460" font-family="Arial, sans-serif" font-size="16" fill="#eeeeee">Sample drawing: car parked across the footpath</text>
 </svg>

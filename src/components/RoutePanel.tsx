@@ -2,7 +2,7 @@ import { describePath, graphFor } from '../core/graph'
 import { PROFILES } from '../core/profiles'
 import type { ReportImpact, Route, RouteResult } from '../core/route'
 import { PROFILE_IDS, type Campus, type ProfileId } from '../core/types'
-import { ProfileIcon } from './icons'
+import { CheckIcon, ProfileIcon, SwapIcon } from './icons'
 import { CATEGORY_LABEL, formatAgo, formatMetres, STATUS_LABEL } from './labels'
 
 interface PanelProps {
@@ -14,13 +14,64 @@ interface PanelProps {
 }
 
 /** Profile, start and destination pickers. */
-export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps) {
+const DEFAULT_PROFILES: ProfileId[] = ['wheelchair']
+
+function StopSelect({
+  label,
+  placeholder,
+  value,
+  campus,
+  onPick,
+}: {
+  label: string
+  placeholder: string
+  value: string
+  campus: Campus
+  onPick: (id: string) => void
+}) {
   const sorted = [...campus.nodes].sort((a, b) => a.name.localeCompare(b.name))
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <select value={value} onChange={(e) => onPick(e.target.value)}>
+        <option value="">{placeholder}</option>
+        {sorted.map((n) => (
+          <option key={n.id} value={n.id}>
+            {n.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
+/** Start and destination stacked, then the profile check boxes. */
+export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps) {
+  const touched = from !== '' || to !== '' || profiles.join() !== DEFAULT_PROFILES.join()
   return (
     <section className="panel route-panel" aria-labelledby="route-heading">
       <h2 id="route-heading">Find a route</h2>
+      <div className="od">
+        <div className="od-row od-from">
+          <span className="od-mark" aria-hidden="true" />
+          <StopSelect label="From" placeholder="Choose start" value={from} campus={campus} onPick={(id) => onChange({ from: id })} />
+        </div>
+        <div className="od-row od-to">
+          <span className="od-mark" aria-hidden="true" />
+          <StopSelect label="To" placeholder="Choose destination" value={to} campus={campus} onPick={(id) => onChange({ to: id })} />
+        </div>
+        <button
+          type="button"
+          className="swap"
+          aria-label="Swap start and destination"
+          title="Swap start and destination"
+          onClick={() => onChange({ from: to, to: from })}
+        >
+          <SwapIcon />
+        </button>
+      </div>
       <fieldset className="profiles">
-        <legend>Profile (tick every one that applies)</legend>
+        <legend>Profile</legend>
         {PROFILE_IDS.map((id) => {
           const checked = profiles.includes(id)
           const onlyOne = checked && profiles.length === 1
@@ -43,44 +94,26 @@ export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps)
                   })
                 }
               />
+              <span className="profile-box" aria-hidden="true">
+                {checked && <CheckIcon size={12} />}
+              </span>
               <ProfileIcon profile={id} />
               <span>{PROFILES[id].name}</span>
             </label>
           )
         })}
       </fieldset>
-      <div className="od">
-        <label className="field">
-          <span>From</span>
-          <select value={from} onChange={(e) => onChange({ from: e.target.value })}>
-            <option value="">Choose start</option>
-            {sorted.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          className="swap"
-          aria-label="Swap start and destination"
-          title="Swap"
-          onClick={() => onChange({ from: to, to: from })}
-        >
-          ⇅
-        </button>
-        <label className="field">
-          <span>To</span>
-          <select value={to} onChange={(e) => onChange({ to: e.target.value })}>
-            <option value="">Choose destination</option>
-            {sorted.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.name}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="panel-foot">
+        <span className="muted small">Tick every profile that applies.</span>
+        {touched && (
+          <button
+            type="button"
+            className="link-btn"
+            onClick={() => onChange({ profiles: DEFAULT_PROFILES, from: '', to: '' })}
+          >
+            Reset
+          </button>
+        )}
       </div>
     </section>
   )
@@ -124,7 +157,7 @@ function Legs({ campus, route }: { campus: Campus; route: Route }) {
         if (path && path.widthM < 1.5) notes.push(`${path.widthM} m wide`)
         return (
           <li key={leg.pathId}>
-            {name(leg.from)} → {name(leg.to)}
+            {name(leg.from)} to {name(leg.to)}
             <span className="muted">
               {' '}
               · {formatMetres(leg.lengthM)}

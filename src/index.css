@@ -1,27 +1,27 @@
 :root {
   color-scheme: light;
-  --bg: #f2f4f7;
-  --surface: #ffffff;
-  --text: #14202e;
-  --muted: #5b6878;
-  --border: #dbe2ea;
-  --primary: #1d4ed8;
-  --primary-soft: #e6edff;
-  --good: #15803d;
-  --good-soft: #e5f4ea;
+  --bg: #f4f0e4;
+  --surface: #fcfaf3;
+  --text: #1c2b23;
+  --muted: #55625a;
+  --border: #d8d1bd;
+  --primary: #14654f;
+  --primary-soft: #e1ebdc;
+  --good: #176b35;
+  --good-soft: #e3f1e3;
   --verified: #b91c1c;
   --verified-soft: #fde8e8;
-  --unverified: #b45309;
+  --unverified: #9a4a06;
   --unverified-soft: #fdf0dc;
-  --outdated: #6b7280;
-  --outdated-soft: #eceef1;
-  --cleared: #15803d;
+  --outdated: #5e625b;
+  --outdated-soft: #ecebe3;
+  --cleared: #176b35;
   --caution: #d97706;
-  --map-bg: #eaf2e6;
-  --path: #8794a6;
+  --map-bg: #e8edd9;
+  --path: #8c9187;
   --steps: #8a6a3a;
-  --radius: 14px;
-  --shadow: 0 1px 2px rgb(15 23 42 / 6%), 0 4px 14px rgb(15 23 42 / 6%);
+  --radius: 8px;
+  --shadow: 0 1px 2px rgb(28 43 35 / 8%);
 
   font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   line-height: 1.45;
@@ -121,11 +121,19 @@ textarea {
   padding: 16px;
   grid-template-columns: minmax(0, 1fr) 390px;
   grid-template-areas:
+    'intro intro'
     'map controls'
     'map result'
     'map reports';
-  grid-template-rows: auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   align-items: start;
+}
+
+.intro {
+  grid-area: intro;
+  margin: 0;
+  max-width: 70ch;
+  color: var(--muted);
 }
 
 .area-controls {
@@ -160,7 +168,7 @@ textarea {
 @media (max-width: 900px) {
   .home {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: 'controls' 'map' 'result' 'reports';
+    grid-template-areas: 'intro' 'controls' 'map' 'result' 'reports';
     grid-template-rows: auto;
     padding: 12px;
     gap: 12px;
@@ -203,7 +211,7 @@ textarea {
   min-height: 44px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--surface);
   color: var(--text);
   font-weight: 500;
@@ -220,13 +228,91 @@ textarea {
   outline-offset: 2px;
 }
 
-/* Profile segmented control */
+/* Start and destination, stacked, with a dotted connector and a swap button */
+.od {
+  --centre: 46px; /* middle of a select, measured from the top of its label */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  column-gap: 8px;
+  margin-bottom: 16px;
+}
+.od-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  column-gap: 8px;
+  grid-column: 1;
+}
+.od-from {
+  grid-row: 1;
+}
+.od-from .field {
+  margin-bottom: 10px;
+}
+.od-to {
+  grid-row: 2;
+}
+.od-mark {
+  position: relative;
+}
+.od-mark::before,
+.od-mark::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+}
+.od-mark::before {
+  top: calc(var(--centre) - 6px);
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border: 2px solid var(--primary);
+  background: var(--surface);
+}
+.od-from .od-mark::before {
+  border-radius: 50%;
+}
+.od-to .od-mark::before {
+  background: var(--primary);
+  border-radius: 2px;
+}
+.od-mark::after {
+  border-left: 2px dotted var(--muted);
+  margin-left: -1px;
+}
+.od-from .od-mark::after {
+  top: calc(var(--centre) + 9px);
+  bottom: 0;
+}
+.od-to .od-mark::after {
+  top: 0;
+  height: calc(var(--centre) - 9px);
+}
+
+.swap {
+  grid-column: 2;
+  grid-row: 1 / 3;
+  align-self: center;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+}
+.swap:hover {
+  background: var(--primary-soft);
+}
+
+/* Profile check boxes */
 .profiles {
   border: 0;
   padding: 0;
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 6px;
 }
 
@@ -244,10 +330,11 @@ textarea {
   flex-direction: column;
   align-items: center;
   gap: 4px;
-  padding: 10px 6px;
-  min-height: 64px;
+  padding: 12px 6px 10px;
+  min-height: 70px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 6px;
+  background: var(--surface);
   cursor: pointer;
   font-size: 0.88rem;
   font-weight: 600;
@@ -261,10 +348,31 @@ textarea {
   pointer-events: none;
 }
 
+.profile-box {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  display: grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--muted);
+  border-radius: 3px;
+}
+
 .profile-option.is-active {
   background: var(--primary);
   border-color: var(--primary);
   color: #fff;
+}
+.profile-option.is-active .profile-box {
+  border-color: #fff;
+  background: #fff;
+  color: var(--primary);
+}
+
+.profile-option:has(input:disabled) {
+  cursor: default;
 }
 
 .profile-option:has(input:focus-visible) {
@@ -272,21 +380,11 @@ textarea {
   outline-offset: 2px;
 }
 
-.od {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px minmax(0, 1fr);
+.panel-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 8px;
-  align-items: end;
-}
-
-.swap {
-  height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--surface);
-  cursor: pointer;
-  font-size: 1.2rem;
-  transform: rotate(90deg);
 }
 
 /* Buttons */
@@ -297,7 +395,7 @@ textarea {
   gap: 6px;
   min-height: 40px;
   padding: 8px 14px;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--primary);
   background: var(--primary);
   color: #fff;
@@ -381,7 +479,7 @@ textarea {
 .chip {
   display: inline-block;
   padding: 3px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--outdated-soft);
   font-size: 0.85rem;
   font-weight: 600;
@@ -394,7 +492,7 @@ textarea {
 }
 
 .callout {
-  border-radius: 10px;
+  border-radius: 6px;
   padding: 10px 12px;
   margin: 10px 0;
 }
@@ -432,7 +530,7 @@ textarea {
   display: inline-block;
   margin-left: 6px;
   padding: 1px 8px;
-  border-radius: 999px;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 700;
   vertical-align: 1px;
@@ -459,7 +557,7 @@ textarea {
 .map-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 10px;
   box-shadow: var(--shadow);
   padding: 8px;
 }
@@ -510,7 +608,7 @@ textarea {
 .path-badge {
   font-size: 17px;
   font-weight: 700;
-  fill: #475569;
+  fill: #46514a;
   text-anchor: middle;
   paint-order: stroke;
   stroke: var(--map-bg);
@@ -601,7 +699,7 @@ textarea {
 
 .node circle {
   fill: #fff;
-  stroke: #334155;
+  stroke: #3b4a41;
   stroke-width: 3;
 }
 .node-via circle {
@@ -625,7 +723,7 @@ textarea {
 .node-label {
   font-size: 21px;
   font-weight: 650;
-  fill: #1e293b;
+  fill: #1c2b23;
   text-anchor: middle;
   paint-order: stroke;
   stroke: var(--map-bg);
@@ -776,13 +874,14 @@ textarea {
   text-align: left;
 }
 .icon-btn {
+  display: grid;
+  place-items: center;
   width: 40px;
   height: 40px;
-  border-radius: 50%;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   cursor: pointer;
-  font-size: 1rem;
   flex: none;
 }
 
@@ -793,13 +892,13 @@ textarea {
   max-height: calc(100dvh - 48px);
   padding: 0;
   border: 0;
-  border-radius: 18px;
-  box-shadow: 0 20px 60px rgb(15 23 42 / 30%);
+  border-radius: 10px;
+  box-shadow: 0 12px 32px rgb(28 43 35 / 28%);
   color: var(--text);
   background: var(--surface);
 }
 .sheet::backdrop {
-  background: rgb(15 23 42 / 45%);
+  background: rgb(28 43 35 / 45%);
 }
 .sheet-inner {
   padding: 18px;
@@ -830,7 +929,7 @@ textarea {
     max-width: 100vw;
     max-height: 92dvh;
     margin: auto 0 0;
-    border-radius: 18px 18px 0 0;
+    border-radius: 10px 10px 0 0;
   }
   .sheet-inner {
     padding: 16px 14px 24px;
@@ -848,7 +947,7 @@ textarea {
 }
 .step {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 6px;
   padding: 12px;
   margin: 0;
   min-width: 0;
@@ -862,7 +961,7 @@ textarea {
   place-items: center;
   width: 22px;
   height: 22px;
-  border-radius: 50%;
+  border-radius: 4px;
   background: var(--primary);
   color: #fff;
   font-size: 0.8rem;
@@ -893,12 +992,20 @@ textarea {
   gap: 12px;
   align-items: flex-end;
 }
+.photo-side {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+}
+.photo-side p {
+  margin: 0;
+}
 .photo-preview img {
   width: 160px;
   max-width: 50%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 10px;
+  border-radius: 6px;
   border: 1px solid var(--border);
 }
 
@@ -923,9 +1030,9 @@ textarea {
 }
 
 .suggestion {
-  border: 1px solid #c7d2fe;
-  background: #f5f7ff;
-  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  border-radius: 6px;
   padding: 10px 12px;
   margin-bottom: 8px;
 }
@@ -944,15 +1051,18 @@ textarea {
 .ai-badge {
   display: inline-block;
   padding: 2px 10px;
-  border-radius: 999px;
-  background: #4338ca;
+  border-radius: 4px;
+  background: #2b3730;
   color: #fff;
   font-size: 0.78rem;
   font-weight: 700;
   letter-spacing: 0.01em;
 }
+/* The demo classifier does not look at the picture, so its tag is drawn as an outline. */
 .ai-badge-demo {
-  background: #6d28d9;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid #2b3730;
 }
 
 .confirmed {
@@ -980,7 +1090,7 @@ textarea {
   min-height: 44px;
   padding: 8px 10px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   background: var(--surface);
   cursor: pointer;
   font-weight: 600;
@@ -1002,7 +1112,7 @@ textarea {
   gap: 2px;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 6px;
   cursor: pointer;
 }
 .severity-option input {
@@ -1038,7 +1148,7 @@ textarea {
   gap: 10px;
   padding: 10px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 6px;
 }
 .report-verified {
   border-left: 5px solid var(--verified);
@@ -1048,7 +1158,7 @@ textarea {
 }
 .report-outdated {
   border-left: 5px solid var(--outdated);
-  background: #fafafa;
+  background: #f7f4ea;
 }
 .report-cleared {
   border-left: 5px solid var(--cleared);
@@ -1058,13 +1168,25 @@ textarea {
   width: 56px;
   height: 56px;
   object-fit: cover;
-  border-radius: 8px;
+  border-radius: 4px;
   background: var(--outdated-soft);
 }
 .report-thumb-empty {
   display: grid;
   place-items: center;
-  font-weight: 800;
+  padding: 4px;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--muted);
+}
+.tag-example {
+  padding: 1px 6px;
+  border: 1px solid var(--muted);
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 700;
   color: var(--muted);
 }
 .report-body {
@@ -1115,12 +1237,12 @@ textarea {
   max-width: calc(100vw - 32px);
 }
 .toast {
-  background: #0f172a;
+  background: #1c2b23;
   color: #fff;
   padding: 10px 16px;
-  border-radius: 999px;
+  border-radius: 6px;
   font-weight: 600;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 30%);
+  box-shadow: 0 4px 12px rgb(28 43 35 / 25%);
   animation: toast-in 0.25s ease-out;
 }
 @keyframes toast-in {
@@ -1167,12 +1289,12 @@ textarea {
   font-size: 0.85rem;
   font-weight: 600;
   padding: 4px 10px;
-  border-radius: 999px;
+  border-radius: 4px;
   background: var(--outdated-soft);
 }
 .clock-ahead {
-  background: #ede9fe;
-  color: #5b21b6;
+  background: #f6e7c1;
+  color: #5c3f00;
 }
 
 /* ---------- Navigation ---------- */
@@ -1183,7 +1305,7 @@ textarea {
 }
 .nav a {
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 6px;
   color: var(--text);
   text-decoration: none;
   font-weight: 600;
@@ -1254,7 +1376,7 @@ textarea {
 .chip-btn {
   min-height: 38px;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: 6px;
   border: 1px solid var(--border);
   background: var(--surface);
   font-weight: 600;

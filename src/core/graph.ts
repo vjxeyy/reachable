@@ -77,7 +77,7 @@ export function pathKind(path: CampusPath): 'steps' | 'ramp' | 'steep' | 'narrow
   return 'path'
 }
 
-/** Human label such as "Canteen – Hostel ramp". */
+/** Human label such as "Canteen to Hostel ramp". */
 export function describePath(campus: Campus, pathId: string): string {
   const graph = graphFor(campus)
   const path = graph.pathById.get(pathId)
@@ -85,5 +85,5 @@ export function describePath(campus: Campus, pathId: string): string {
   const from = graph.nodeById.get(path.from)?.name ?? path.from
   const to = graph.nodeById.get(path.to)?.name ?? path.to
   const kind = pathKind(path)
-  return kind === 'path' ? `${from} – ${to}` : `${from} – ${to} ${kind}`
+  return kind === 'path' ? `${from} to ${to}` : `${from} to ${to} ${kind}`
 }
