@@ -1,9 +1,19 @@
+import { Home } from './pages/Home'
+
 function App() {
   return (
-    <main className="placeholder">
-      <h1>REACHABLE</h1>
-      <p>Know before you go.</p>
-    </main>
+    <div className="app">
+      <header className="topbar">
+        <a className="brand" href="#/">
+          <img src="/favicon.svg" alt="" width={28} height={28} />
+          <span className="brand-name">REACHABLE</span>
+          <span className="brand-tag">Know before you go</span>
+        </a>
+      </header>
+      <main className="main">
+        <Home />
+      </main>
+    </div>
   )
 }
 
