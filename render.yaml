@@ -1,0 +1,23 @@
+# Render Blueprint: one free web service runs the whole app (built frontend + API + SQLite).
+# Deploy: https://render.com/deploy?repo=https://github.com/vjxeyy/reachable
+#
+# Free plan notes:
+# - The service sleeps after 15 minutes without traffic; the first visit then takes about a minute.
+#   An open REACHABLE tab polls every 5 s, which keeps it awake.
+# - The disk is temporary: the database and uploaded photos reset when the service restarts or
+#   redeploys. The example reports load again automatically. For lasting data, use a paid plan with a
+#   disk and set DB_PATH and UPLOADS_DIR to paths on it.
+# - To use the real photo classifier, add ANTHROPIC_API_KEY under the service's Environment settings.
+services:
+  - type: web
+    name: reachable
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "24"
