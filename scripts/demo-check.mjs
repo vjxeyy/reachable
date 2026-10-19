@@ -4,23 +4,45 @@
 //   npm run demo:check -- https://my-api.example.com
 //
 // It resets the demo before and after, so it removes any reports on that server. Use it on a
-// demo or local server only.
+// demo or local server only. Resetting needs the owner login, so it signs in first with ADMIN_EMAIL and
+// ADMIN_PASSWORD, taken from the environment or from .env (the same values the server uses).
+
+try {
+  process.loadEnvFile('.env')
+} catch {
+  // .env is optional.
+}
 
 const base = (process.argv[2] ?? process.env.API_URL ?? 'http://localhost:8787').replace(/\/$/, '')
 const query = { from: 'library', to: 'hostel', profile: 'wheelchair' }
 const voterId = 'demo-check-passer-by'
 let failed = false
+/** The owner's session cookie, once signed in. */
+let cookie = ''
 
 async function call(method, path, body) {
   const isForm = body instanceof FormData
+  const headers = { ...(body && !isForm ? { 'Content-Type': 'application/json' } : {}), ...(cookie ? { Cookie: cookie } : {}) }
   const response = await fetch(base + path, {
     method,
-    headers: body && !isForm ? { 'Content-Type': 'application/json' } : undefined,
+    headers,
     body: body === undefined ? undefined : isForm ? body : JSON.stringify(body),
   })
   const data = await response.json()
   if (!response.ok) throw new Error(`${method} ${path} -> ${response.status}: ${data.error ?? ''}`)
+  const setCookie = response.headers.get('set-cookie')
+  if (setCookie && path === '/api/auth/login') cookie = setCookie.split(';')[0]
   return data
+}
+
+/** Resetting the demo is the owner's job, so sign in first. */
+async function signIn() {
+  const email = process.env.ADMIN_EMAIL
+  const password = process.env.ADMIN_PASSWORD
+  if (!email || !password) {
+    throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD (in the environment or .env) so the check can sign in and reset the demo.')
+  }
+  await call('POST', '/api/auth/login', { email, password })
 }
 
 const route = () => call('GET', `/api/route?from=${query.from}&to=${query.to}&profile=${query.profile}`)
@@ -55,6 +77,7 @@ async function report(pathId, fileName) {
 
 try {
   await call('GET', '/api/health')
+  await signIn()
   await call('POST', '/api/demo/reset', { at: Date.now() })
   const campus = await call('GET', '/api/campus')
   const pathById = new Map(campus.paths.map((p) => [p.id, p]))
@@ -133,4 +156,4 @@ try {
 }
 
 console.log(failed ? '\nDemo check FAILED' : '\nAll 5 demo steps passed. Demo data has been reset.')
-process.exit(failed ? 1 : 0)
+process.exitCode = failed ? 1 : 0
