@@ -1732,6 +1732,10 @@ textarea {
   flex: 1;
   min-width: 0;
 }
+.banner a {
+  color: var(--primary);
+  font-weight: 600;
+}
 .banner {
   margin: 0;
   padding: 10px 12px;

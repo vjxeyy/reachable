@@ -191,8 +191,9 @@ Write each decision down here when it is made, so later phases stay consistent.
     called Dashboard.
 17. **Admin login** (`server/auth.ts`, `server/routes/auth.ts`, `src/pages/Login.tsx`, `src/pages/Admin.tsx`): there is exactly
     one admin, from `ADMIN_EMAIL` and `ADMIN_PASSWORD` (never in the database). No sign-up, no staff, no pending accounts, no
-    demo account: the user decided on owner only. `requireOwner` guards verify, resolve and reset demo; everyone else can
-    read and report. Passwords use scrypt with a salt, comparison is constant time, every failed login gives the same
+    demo account: the user decided on owner only. Anyone can VIEW the Dashboard (reading reports is public); `requireOwner`
+    guards verify, resolve and reset demo, and the Dashboard only shows those buttons to the signed-in admin. Everyone else
+    can read and report. Passwords use scrypt with a salt, comparison is constant time, every failed login gives the same
     message. The session is a signed `HttpOnly` cookie (12 h). 5 failed logins per 10 minutes per address and email
     are blocked. With no admin configured, admin actions answer 403. Without a server (Vercel) the Dashboard opens with a
     banner saying changes only affect this browser: a password cannot be checked there, so it is not faked.

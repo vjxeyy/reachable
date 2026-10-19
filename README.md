@@ -20,7 +20,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm or clear a report; clearing restores the route instantly.
-- **Dashboard** (`#/admin`), behind a login. Filter reports, verify or resolve them, and see how many paths are affected.
+- **Dashboard** (`#/admin`). Anyone can look at it: filter reports and see how many paths are affected. Verifying or resolving reports needs the admin login.
 - **Works offline.** Without the server, reports live in the browser (localStorage). When the server is up,
   reports are shared between devices.
 
@@ -180,7 +180,8 @@ npm run demo:check
 
 ## Dashboard login
 
-The **Admin** button at the top right opens the login page. On the shared server (Render) the Dashboard needs a login:
+The **Admin** button at the top right opens the login page. Anyone can **view** the Dashboard. On the shared server (Render), the
+buttons that change what everyone sees need the login:
 
 - There is **one admin**, set with `ADMIN_EMAIL` and `ADMIN_PASSWORD`. Only that login can verify or resolve reports and reset
   the demo. There is no sign-up and no other kind of account, so nobody else can get in. Everyone else can still read and

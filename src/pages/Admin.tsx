@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CATEGORY_LABEL, STATUS_LABEL } from '../components/labels'
 import { ReportList } from '../components/ReportList'
 import { TrustBadge } from '../components/TrustBadge'
@@ -19,38 +19,17 @@ function routeEffect(report: Report): string {
 }
 
 /**
- * The Dashboard behind its gate. On the shared server only the signed-in admin gets in.
- * With no server there is nothing shared to protect: it opens, with a note.
+ * The Dashboard. Anyone can look at it. Verifying and resolving change what everyone sees, so on the shared
+ * server only the signed-in admin gets those buttons. With no server the data is the visitor's own, so the
+ * buttons are there, with a note.
  */
 export function Admin() {
   const { source, auth } = useStore()
-  const needsLogin = source === 'api' && auth.ready && !auth.user
-  useEffect(() => {
-    if (needsLogin) window.location.hash = '#/login'
-  }, [needsLogin])
-
-  if (source === 'connecting' || (source === 'api' && !auth.ready)) {
-    return (
-      <div className="admin">
-        <p className="muted" role="status">
-          Checking the login.
-        </p>
-      </div>
-    )
-  }
-  if (needsLogin) {
-    return (
-      <div className="admin">
-        <p>
-          Sign in to use the Dashboard. <a href="#/login">Go to the login page</a>.
-        </p>
-      </div>
-    )
-  }
-  return <Dashboard shared={source === 'api'} />
+  const shared = source === 'api'
+  return <Dashboard shared={shared} canAct={!shared || auth.user !== null} />
 }
 
-function Dashboard({ shared }: { shared: boolean }) {
+function Dashboard({ shared, canAct }: { shared: boolean; canAct: boolean }) {
   const { reports, confirmations } = useStore()
   const now = useNow()
   const [status, setStatus] = useState<ReportStatus | 'all'>('all')
@@ -75,13 +54,22 @@ function Dashboard({ shared }: { shared: boolean }) {
       <header className="admin-head">
         <div>
           <h1>Dashboard</h1>
-          <p className="muted">Verify reports to make them hard blocks, or resolve them once fixed. Changes reach routes at once.</p>
+          <p className="muted">
+            {canAct
+              ? 'Verify reports to make them hard blocks, or resolve them once fixed. Changes reach routes at once.'
+              : 'Every report and what it does to routes right now. Verifying and resolving are for the admin.'}
+          </p>
         </div>
       </header>
 
       {!shared && (
         <p className="banner" role="note">
           No shared server here, so changes only affect reports saved in this browser.
+        </p>
+      )}
+      {!canAct && (
+        <p className="banner" role="note">
+          You are viewing the Dashboard. Only the admin can verify or resolve reports. <a href="#/login">Admin login</a>
         </p>
       )}
 
@@ -139,7 +127,7 @@ function Dashboard({ shared }: { shared: boolean }) {
             </div>
           )}
           renderActions={(report) =>
-            report.status === 'cleared' ? null : (
+            !canAct || report.status === 'cleared' ? null : (
               <>
                 {report.status !== 'verified' && (
                   <button type="button" className="btn btn-danger btn-small" onClick={async () => notify((await adminVerify(report.id)) ?? 'Verified. It now blocks routes.')}>
