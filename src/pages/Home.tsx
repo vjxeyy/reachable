@@ -1,10 +1,28 @@
-import { useMemo, useState } from 'react'
-import { CampusMap } from '../components/CampusMap'
+import { useEffect, useMemo, useState } from 'react'
+import { CampusMap, type MapMarker } from '../components/CampusMap'
+import { ReportSheet } from '../components/ReportForm'
+import { ReportList } from '../components/ReportList'
 import { RoutePanel, RouteSummary } from '../components/RoutePanel'
 import { findRoute } from '../core/route'
 import { isActive, withDerivedStatus } from '../core/trust'
-import type { ProfileId } from '../core/types'
+import type { ProfileId, Report, ReportStatus } from '../core/types'
 import { campus, useNow, useStore } from '../state/store'
+
+const STATUS_RANK: Record<ReportStatus, number> = { verified: 3, unverified: 2, outdated: 1, cleared: 0 }
+
+function markersFor(reports: Report[]): MapMarker[] {
+  const byPath = new Map<string, MapMarker>()
+  for (const r of reports) {
+    if (r.status === 'cleared') continue
+    const existing = byPath.get(r.pathId)
+    if (!existing) byPath.set(r.pathId, { pathId: r.pathId, status: r.status, count: 1 })
+    else {
+      existing.count++
+      if (STATUS_RANK[r.status] > STATUS_RANK[existing.status]) existing.status = r.status
+    }
+  }
+  return [...byPath.values()]
+}
 
 export function Home() {
   const { reports, confirmations } = useStore()
@@ -13,13 +31,26 @@ export function Home() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
+  const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
+  const [toast, setToast] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!toast) return
+    const timer = setTimeout(() => setToast(null), 4500)
+    return () => clearTimeout(timer)
+  }, [toast])
 
   const result = useMemo(
     () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile }) : null),
     [reports, confirmations, now, from, to, profile],
   )
-  const live = useMemo(() => withDerivedStatus(reports, confirmations, now), [reports, confirmations, now])
+  const live = useMemo(
+    () => withDerivedStatus(reports, confirmations, now).sort((a, b) => b.createdAt - a.createdAt),
+    [reports, confirmations, now],
+  )
+  const visible = live.filter((r) => r.status !== 'cleared')
   const activeCount = live.filter((r) => isActive(r.status)).length
+  const markers = useMemo(() => markersFor(live), [live])
 
   const route = result?.status === 'ok' ? result.route : null
   const option = result?.status === 'no_verified_route' ? result.alternative : null
@@ -44,6 +75,7 @@ export function Home() {
       </div>
       <div className="area-map">
         <div className="map-card">
+          <p className="map-hint muted small">Tap a path to report a problem or see its reports.</p>
           <CampusMap
             campus={campus}
             profile={profile}
@@ -51,6 +83,9 @@ export function Home() {
             caution={showCaution ? option : null}
             from={from}
             to={to}
+            markers={markers}
+            selectedPathId={selectedPathId}
+            onPathSelect={setSelectedPathId}
           />
           <MapLegend />
         </div>
@@ -64,6 +99,43 @@ export function Home() {
           showCaution={showCaution}
           onToggleCaution={() => setCautionShownFor(showCaution ? null : optionKey)}
         />
+      </div>
+      <div className="area-reports">
+        <section className="panel" aria-labelledby="reports-heading">
+          <h2 id="reports-heading">Live reports</h2>
+          <ReportList
+            campus={campus}
+            reports={visible}
+            now={now}
+            emptyText="No reports yet. Tap a path on the map to report a problem."
+            onSelectPath={setSelectedPathId}
+          />
+        </section>
+      </div>
+
+      {selectedPathId && (
+        <ReportSheet
+          key={selectedPathId}
+          campus={campus}
+          pathId={selectedPathId}
+          onClose={() => setSelectedPathId(null)}
+          onSubmitted={() => {
+            setSelectedPathId(null)
+            setToast('Report saved. Routes updated.')
+          }}
+        >
+          <ReportList
+            campus={campus}
+            reports={visible.filter((r) => r.pathId === selectedPathId)}
+            now={now}
+            showPath={false}
+            emptyText="No live reports on this path."
+          />
+        </ReportSheet>
+      )}
+
+      <div className="toast-region" aria-live="polite">
+        {toast && <div className="toast">{toast}</div>}
       </div>
     </div>
   )
@@ -101,6 +173,11 @@ function MapLegend() {
           <line x1="2" y1="6" x2="32" y2="6" className="legend-caution" />
         </svg>
         Unverified option
+      </li>
+      <li>
+        <span className="legend-dot legend-verified" /> Verified
+        <span className="legend-dot legend-unverified" /> Unverified
+        <span className="legend-dot legend-outdated" /> Outdated report
       </li>
     </ul>
   )
