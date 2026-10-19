@@ -53,6 +53,10 @@ function migrate(db: DB): void {
     );
     CREATE INDEX IF NOT EXISTS confirmations_report ON confirmations (report_id);
     CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY, email TEXT NOT NULL UNIQUE, password_hash TEXT NOT NULL,
+      status TEXT NOT NULL, created_at INTEGER NOT NULL
+    );
   `)
 }
 
@@ -208,4 +212,65 @@ export function getMeta(db: DB, key: string): string | null {
 
 export function setMeta(db: DB, key: string, value: string): void {
   db.prepare('INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)').run(key, value)
+}
+
+// ---------- Sign-ups (the owner and the demo account live in env vars, not here) ----------
+
+export type UserStatus = 'pending' | 'approved' | 'rejected'
+
+export interface UserRow {
+  id: string
+  /** Always lower-case. */
+  email: string
+  passwordHash: string
+  status: UserStatus
+  createdAt: number
+}
+
+interface RawUser {
+  id: string
+  email: string
+  password_hash: string
+  status: UserStatus
+  created_at: number
+}
+
+const toUser = (row: RawUser): UserRow => ({
+  id: row.id,
+  email: row.email,
+  passwordHash: row.password_hash,
+  status: row.status,
+  createdAt: row.created_at,
+})
+
+export function insertUser(db: DB, user: UserRow): void {
+  db.prepare('INSERT INTO users (id, email, password_hash, status, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    user.id,
+    user.email,
+    user.passwordHash,
+    user.status,
+    user.createdAt,
+  )
+}
+
+export function findUserByEmail(db: DB, email: string): UserRow | null {
+  const row = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as RawUser | undefined
+  return row ? toUser(row) : null
+}
+
+export function findUserById(db: DB, id: string): UserRow | null {
+  const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as RawUser | undefined
+  return row ? toUser(row) : null
+}
+
+export function listUsers(db: DB): UserRow[] {
+  return (db.prepare('SELECT * FROM users ORDER BY created_at DESC').all() as RawUser[]).map(toUser)
+}
+
+export function setUserStatus(db: DB, id: string, status: UserStatus): void {
+  db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, id)
+}
+
+export function deleteUser(db: DB, id: string): void {
+  db.prepare('DELETE FROM users WHERE id = ?').run(id)
 }

@@ -8,8 +8,10 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import campusData from '../data/campus.json'
 import { loadCampus } from '../src/core/graph'
+import { authConfigFromEnv, createAuth } from './auth'
 import { buildServerClassifier } from './classifier-config'
 import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
+import { authRouter } from './routes/auth'
 import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
 import { demoRouter, seedDemoIfNew } from './routes/demo'
@@ -29,9 +31,13 @@ export interface AppOptions {
 export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   const app = express()
   app.disable('x-powered-by')
+  // Behind Render's proxy: use the real client address (for the login limits) and know when the request was HTTPS.
+  app.set('trust proxy', 1)
 
   app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', options.corsOrigin || '*')
+    // The login cookie crosses origins only when one origin is named, never with the wildcard.
+    if (options.corsOrigin) res.setHeader('Access-Control-Allow-Credentials', 'true')
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
     if (req.method === 'OPTIONS') res.sendStatus(204)
@@ -42,6 +48,7 @@ export function createApp(ctx: ServerContext, options: AppOptions = {}) {
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, areaId: ctx.campus.areaId, campus: ctx.campus.name, classifier: ctx.classifier.name })
   })
+  app.use('/api', authRouter(ctx))
   app.use('/api', reportsRouter(ctx))
   app.use('/api', routeRouter(ctx))
   app.use('/api', classifyRouter(ctx))
@@ -102,13 +109,22 @@ function main(): void {
       (error: unknown) => console.error('CLIP model could not load; using the demo classifier:', error instanceof Error ? error.message : error),
     )
   }
+  const auth = createAuth(authConfigFromEnv(process.env))
   const app = createApp(
-    { db, campus, uploadsDir, classifier: chosen.classifier },
+    { db, campus, uploadsDir, classifier: chosen.classifier, auth },
     { staticDir: path.join(root, 'dist'), corsOrigin: process.env.CORS_ORIGIN },
   )
   app.listen(port, () => {
     console.log(`REACHABLE API on http://localhost:${port}  (database: ${path.relative(root, dbPath)})`)
     console.log(chosen.description)
+    console.log(
+      auth.configured
+        ? `Admin login is set up${auth.demo ? ', with a demo account on the login page' : ''}.`
+        : 'Admin login is NOT set up (set ADMIN_EMAIL and ADMIN_PASSWORD): admin actions are locked.',
+    )
+    if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length < 10) {
+      console.warn('ADMIN_PASSWORD is shorter than 10 characters. Use a longer one.')
+    }
   })
 }
 

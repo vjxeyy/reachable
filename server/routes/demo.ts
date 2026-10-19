@@ -6,6 +6,7 @@ import path from 'node:path'
 import seedData from '../../data/seed-reports.json'
 import { buildSeed, type SeedFile } from '../../src/core/seed'
 import { deleteAreaReports, getMeta, insertConfirmation, insertReport, setMeta, type DB } from '../db'
+import { requireOwner } from '../auth'
 import { timeFrom, type ServerContext } from './context'
 import { snapshot } from './reports'
 
@@ -42,7 +43,8 @@ export async function resetDemo(db: DB, uploadsDir: string, areaId: string, now:
 
 export function demoRouter(ctx: ServerContext): Router {
   const router = Router()
-  router.post('/demo/reset', async (req, res) => {
+  // Wiping every report is for the owner only.
+  router.post('/demo/reset', requireOwner(ctx), async (req, res) => {
     const now = timeFrom(req)
     await resetDemo(ctx.db, ctx.uploadsDir, ctx.campus.areaId, now)
     res.json(snapshot(ctx.db, ctx.campus.areaId, now))

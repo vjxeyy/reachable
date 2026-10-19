@@ -3,6 +3,7 @@
 import type { Request } from 'express'
 import type { Classifier } from '../../src/classifier'
 import type { Campus } from '../../src/core/types'
+import type { Auth } from '../auth'
 import type { DB } from '../db'
 
 export interface ServerContext {
@@ -12,6 +13,8 @@ export interface ServerContext {
   uploadsDir: string
   /** Classifier used by POST /classify (real model with simulated fallback, or simulated only). */
   classifier: Classifier
+  /** Admin login: the owner, the demo account, sign-ups and sessions. */
+  auth: Auth
 }
 
 export class HttpError extends Error {
