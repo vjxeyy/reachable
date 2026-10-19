@@ -1,6 +1,6 @@
 import type { KeyboardEvent } from 'react'
 import { pathKind } from '../core/graph'
-import { getProfile, hardExclusionReason } from '../core/profiles'
+import { hardExclusionReason, resolveProfile } from '../core/profiles'
 import type { Route } from '../core/route'
 import type { Campus, CampusNode, ProfileId, ReportStatus } from '../core/types'
 
@@ -14,7 +14,8 @@ export interface MapMarker {
 
 interface Props {
   campus: Campus
-  profile: ProfileId
+  /** The ticked profiles; paths the combination cannot use are faded. */
+  profiles: readonly ProfileId[]
   route: Route | null
   /** Unverified option, drawn only when the user asks to see it. */
   caution: Route | null
@@ -60,9 +61,9 @@ function onKeyActivate(event: KeyboardEvent, action: () => void) {
   }
 }
 
-export function CampusMap({ campus, profile, route, caution, from, to, markers = [], selectedPathId, onPathSelect }: Props) {
+export function CampusMap({ campus, profiles, route, caution, from, to, markers = [], selectedPathId, onPathSelect }: Props) {
   const nodes = new Map(campus.nodes.map((n) => [n.id, n]))
-  const prof = getProfile(profile)
+  const prof = resolveProfile(profiles)
   const routeKey = route ? route.pathIds.join('>') : ''
   const onRoute = new Set(route?.nodeIds ?? [])
 

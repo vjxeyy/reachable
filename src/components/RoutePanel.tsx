@@ -7,33 +7,47 @@ import { CATEGORY_LABEL, formatAgo, formatMetres, STATUS_LABEL } from './labels'
 
 interface PanelProps {
   campus: Campus
-  profile: ProfileId
+  profiles: ProfileId[]
   from: string
   to: string
-  onChange: (patch: { profile?: ProfileId; from?: string; to?: string }) => void
+  onChange: (patch: { profiles?: ProfileId[]; from?: string; to?: string }) => void
 }
 
 /** Profile, start and destination pickers. */
-export function RoutePanel({ campus, profile, from, to, onChange }: PanelProps) {
+export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps) {
   const sorted = [...campus.nodes].sort((a, b) => a.name.localeCompare(b.name))
   return (
     <section className="panel route-panel" aria-labelledby="route-heading">
       <h2 id="route-heading">Find a route</h2>
       <fieldset className="profiles">
-        <legend>Profile</legend>
-        {PROFILE_IDS.map((id) => (
-          <label key={id} className={`profile-option${profile === id ? ' is-active' : ''}`}>
-            <input
-              type="radio"
-              name="profile"
-              value={id}
-              checked={profile === id}
-              onChange={() => onChange({ profile: id })}
-            />
-            <ProfileIcon profile={id} />
-            <span>{PROFILES[id].name}</span>
-          </label>
-        ))}
+        <legend>Profile (tick every one that applies)</legend>
+        {PROFILE_IDS.map((id) => {
+          const checked = profiles.includes(id)
+          const onlyOne = checked && profiles.length === 1
+          return (
+            <label
+              key={id}
+              className={`profile-option${checked ? ' is-active' : ''}`}
+              title={onlyOne ? 'At least one profile must stay ticked' : undefined}
+            >
+              <input
+                type="checkbox"
+                name="profile"
+                value={id}
+                checked={checked}
+                // The last ticked box stays ticked: a route always needs a profile.
+                disabled={onlyOne}
+                onChange={() =>
+                  onChange({
+                    profiles: PROFILE_IDS.filter((p) => (p === id ? !checked : profiles.includes(p))),
+                  })
+                }
+              />
+              <ProfileIcon profile={id} />
+              <span>{PROFILES[id].name}</span>
+            </label>
+          )
+        })}
       </fieldset>
       <div className="od">
         <label className="field">

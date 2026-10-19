@@ -12,13 +12,19 @@
 // never presented as the route.
 
 import { graphFor, type CampusGraph } from './graph'
-import { getProfile, hardExclusionReason, OBSTACLE_PENALTY, profilePenalty, type Profile } from './profiles'
+import {
+  hardExclusionReason,
+  OBSTACLE_PENALTY,
+  profilePenalty,
+  resolveProfile,
+  type Profile,
+  type ProfileInput,
+} from './profiles'
 import { deriveStatus, lastConfirmedAt } from './trust'
 import type {
   Campus,
   Category,
   Confirmation,
-  ProfileId,
   Report,
   ReportStatus,
   Severity,
@@ -30,7 +36,8 @@ export const UNVERIFIED_LABEL = 'Unverified, use with caution'
 export interface RouteQuery {
   from: string
   to: string
-  profile: ProfileId
+  /** One profile, or several at once (they combine into the strictest of them). */
+  profile: ProfileInput
 }
 
 export interface RouteInput {
@@ -146,8 +153,8 @@ function impactOf(
 }
 
 /** Effects of every report on every path, for one profile at one moment. */
-export function computeImpacts(input: RouteInput, profileId: ProfileId): ImpactMap {
-  const profile = getProfile(profileId)
+export function computeImpacts(input: RouteInput, profileInput: ProfileInput): ImpactMap {
+  const profile = resolveProfile(profileInput)
   const graph = graphFor(input.campus)
   const impacts: ImpactMap = new Map()
   for (const report of input.reports) {
@@ -304,7 +311,7 @@ export function findRoute(input: RouteInput, query: RouteQuery): RouteResult {
   const graph = graphFor(input.campus)
   if (!graph.nodeById.has(query.from)) throw new Error(`Unknown start node: ${query.from}`)
   if (!graph.nodeById.has(query.to)) throw new Error(`Unknown destination node: ${query.to}`)
-  const profile = getProfile(query.profile)
+  const profile = resolveProfile(query.profile)
   const impacts = computeImpacts(input, query.profile)
 
   const usual = shortest(graph, profile, impacts, 'usual', query.from, query.to)

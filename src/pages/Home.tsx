@@ -27,14 +27,14 @@ function markersFor(reports: Report[]): MapMarker[] {
 
 export function Home() {
   const { reports, confirmations, selection } = useStore()
-  const { profile, from, to } = selection
+  const { profiles, from, to } = selection
   const now = useNow()
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
 
   const result = useMemo(
-    () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile }) : null),
-    [reports, confirmations, now, from, to, profile],
+    () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile: profiles }) : null),
+    [reports, confirmations, now, from, to, profiles],
   )
   const live = useMemo(
     () => withDerivedStatus(reports, confirmations, now).sort((a, b) => b.createdAt - a.createdAt),
@@ -59,7 +59,7 @@ export function Home() {
   const route = result?.status === 'ok' ? result.route : null
   const option = result?.status === 'no_verified_route' ? result.alternative : null
   // The unverified option is drawn only after the user asks, and only for the option they asked about.
-  const optionKey = option ? `${profile}:${option.pathIds.join('>')}` : null
+  const optionKey = option ? `${profiles.join(',')}:${option.pathIds.join('>')}` : null
   const showCaution = optionKey !== null && cautionShownFor === optionKey
 
   return (
@@ -67,7 +67,7 @@ export function Home() {
       <div className="area-controls">
         <RoutePanel
           campus={campus}
-          profile={profile}
+          profiles={profiles}
           from={from}
           to={to}
           onChange={setSelection}
@@ -78,7 +78,7 @@ export function Home() {
           <p className="map-hint muted small">Tap a path to report a problem or see its reports.</p>
           <CampusMap
             campus={campus}
-            profile={profile}
+            profiles={profiles}
             route={route}
             caution={showCaution ? option : null}
             from={from}

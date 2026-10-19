@@ -165,7 +165,24 @@ describe('API', () => {
   it('validates route queries and unknown API paths', async () => {
     expect((await route('from=library&to=nowhere')).status).toBe(400)
     expect((await route('from=library&to=hostel&profile=jetpack')).status).toBe(400)
+    expect((await route('from=library&to=hostel&profile=wheelchair,jetpack')).status).toBe(400)
+    expect((await route('from=library&to=hostel&profile=')).status).toBe(400)
     expect((await api('GET', '/api/nothing-here')).status).toBe(404)
+  })
+
+  it('routes for several profiles at once, whatever the order', async () => {
+    await api('POST', '/api/reports', newReport({ category: 'parked_vehicle', severity: 'partial' }))
+    const wheelchair = await route('from=library&to=hostel&profile=wheelchair')
+    const both = await route('from=library&to=hostel&profile=wheelchair,low_vision')
+    const reversed = await route('from=library&to=hostel&profile=low_vision,wheelchair')
+    expect(both.status).toBe(200)
+    if (wheelchair.data.status !== 'ok' || both.data.status !== 'ok' || reversed.data.status !== 'ok') {
+      throw new Error('Expected routes')
+    }
+    // Low vision treats the partial report as a block, so the combined route avoids the ramp.
+    expect(wheelchair.data.route.pathIds).toContain('p-canteen-hostel-ramp')
+    expect(both.data.route.pathIds).not.toContain('p-canteen-hostel-ramp')
+    expect(reversed.data.route).toEqual(both.data.route)
   })
 
   it('classifies a photo with the demo classifier when no real model is configured', async () => {

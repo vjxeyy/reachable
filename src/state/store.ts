@@ -42,7 +42,8 @@ interface Data {
 }
 
 export interface Selection {
-  profile: ProfileId
+  /** One or more profiles, never empty. Several combine into the strictest of them. */
+  profiles: ProfileId[]
   from: string
   to: string
 }
@@ -56,7 +57,7 @@ export interface StoreState extends Data {
   toast: { id: number; text: string } | null
 }
 
-const EMPTY_SELECTION: Selection = { profile: 'wheelchair', from: '', to: '' }
+const EMPTY_SELECTION: Selection = { profiles: ['wheelchair'], from: '', to: '' }
 
 function readStorage(key: string): string | null {
   try {

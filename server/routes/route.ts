@@ -14,17 +14,22 @@ export function routeRouter(ctx: ServerContext): Router {
   router.get('/route', (req, res) => {
     const from = String(req.query.from ?? '')
     const to = String(req.query.to ?? '')
-    const profile = String(req.query.profile ?? 'wheelchair')
+    const profileParam = String(req.query.profile ?? 'wheelchair')
     const graph = graphFor(campus)
     if (!graph.nodeById.has(from)) throw new HttpError(400, `Unknown or missing "from": ${from}`)
     if (!graph.nodeById.has(to)) throw new HttpError(400, `Unknown or missing "to": ${to}`)
-    if (!(PROFILE_IDS as readonly string[]).includes(profile)) {
-      throw new HttpError(400, `profile must be one of ${PROFILE_IDS.join(', ')}`)
+    // One profile, or a comma list such as "wheelchair,low_vision" for someone who needs several at once.
+    const asked = profileParam.split(',').map((id) => id.trim())
+    const unknown = asked.find((id) => !(PROFILE_IDS as readonly string[]).includes(id))
+    if (unknown !== undefined) {
+      throw new HttpError(400, `profile must be one or more of ${PROFILE_IDS.join(', ')}, separated by commas`)
     }
+    const profiles = PROFILE_IDS.filter((id) => asked.includes(id))
+    const profile: ProfileId | ProfileId[] = profiles.length === 1 ? profiles[0] : profiles
     const now = timeFrom(req)
     const result = findRoute(
       { campus, reports: listReports(db, campus.areaId), confirmations: listConfirmations(db, campus.areaId), now },
-      { from, to, profile: profile as ProfileId },
+      { from, to, profile },
     )
     res.json(result)
   })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import campusData from '../../data/campus.json'
 import { graphFor, loadCampus } from './graph'
+import { hardExclusionReason, PROFILES } from './profiles'
 import { findRoute, UNVERIFIED_LABEL, type RouteResult } from './route'
 import { DECAY_MS } from './trust'
 import type { Confirmation, ProfileId, Report } from './types'
@@ -303,5 +304,122 @@ describe('profile rules', () => {
 
   it('throws on unknown nodes', () => {
     expect(() => route('library', 'nowhere')).toThrow(/Unknown destination/)
+  })
+})
+
+describe('combined profiles', () => {
+  const PROFILE_SETS: ProfileId[][] = [
+    ['wheelchair', 'crutches'],
+    ['wheelchair', 'low_vision'],
+    ['crutches', 'low_vision'],
+    ['wheelchair', 'crutches', 'low_vision'],
+  ]
+  const partial = report({ pathId: HOSTEL_RAMP, category: 'parked_vehicle', severity: 'partial' })
+  const SCENARIOS: Report[][] = [
+    [],
+    [partial],
+    [verifiedReport({ pathId: HOSTEL_RAMP })],
+    [report({ pathId: 'p-library-canteen' }), partial],
+  ]
+  const combo = (from: string, to: string, profile: ProfileId[], reports: Report[] = []) =>
+    findRoute({ campus, reports, confirmations: [], now: NOW }, { from, to, profile })
+  /** The echoed query is what the caller sent, so it is left out when comparing results. */
+  const withoutQuery = (r: RouteResult) => ({ ...r, query: undefined })
+
+  it('a one-item list gives exactly the same result as the plain profile for every pair', () => {
+    for (const id of ['wheelchair', 'crutches', 'low_vision'] as ProfileId[]) {
+      for (const reports of SCENARIOS) {
+        for (const a of campus.nodes) {
+          for (const b of campus.nodes) {
+            expect(withoutQuery(combo(a.id, b.id, [id], reports))).toEqual(
+              withoutQuery(route(a.id, b.id, id, reports)),
+            )
+          }
+        }
+      }
+    }
+  })
+
+  it('a combination is never less strict than any of its members', () => {
+    for (const set of PROFILE_SETS) {
+      for (const reports of SCENARIOS) {
+        for (const a of campus.nodes) {
+          for (const b of campus.nodes) {
+            const combined = combo(a.id, b.id, set, reports)
+            if (combined.status !== 'ok') continue
+            for (const member of set) {
+              // Where the combination finds a verified route, each member could too, and no cheaper.
+              const alone = route(a.id, b.id, member, reports)
+              expect(alone.status).toBe('ok')
+              if (alone.status !== 'ok') continue
+              expect(combined.route.cost).toBeGreaterThanOrEqual(alone.route.cost)
+              // Every path it uses is allowed for every member.
+              for (const pathId of combined.route.pathIds) {
+                expect(hardExclusionReason(PROFILES[member], pathById.get(pathId)!)).toBeNull()
+              }
+            }
+          }
+        }
+      }
+    }
+  })
+
+  it('wheelchair + low vision pays both sets of penalties on the hostel ramp', () => {
+    const r = okRoute(combo('canteen', 'hostel', ['wheelchair', 'low_vision']))
+    expect(r.pathIds).toEqual([HOSTEL_RAMP])
+    // +30 for the 7% slope (wheelchair) and +20 for the 1.4 m width (low vision).
+    expect(r.cost).toBe(pathById.get(HOSTEL_RAMP)!.lengthM + 30 + 20)
+  })
+
+  it('wheelchair + low vision treats a partial obstacle as blocking, wheelchair alone does not', () => {
+    const alone = okRoute(route('library', 'hostel', 'wheelchair', [partial]))
+    expect(alone.pathIds).toContain(HOSTEL_RAMP)
+    const both = okRoute(combo('library', 'hostel', ['wheelchair', 'low_vision'], [partial]))
+    expect(both.pathIds).not.toContain(HOSTEL_RAMP)
+    expect(both.pathIds).toContain(GARDEN_WALK)
+    expect(both.verification).toBe('verified')
+  })
+
+  it('wheelchair + low vision never uses steps, narrow or steep paths', () => {
+    for (const a of campus.nodes) {
+      for (const b of campus.nodes) {
+        const result = combo(a.id, b.id, ['wheelchair', 'low_vision'])
+        if (result.status !== 'ok') continue
+        for (const pathId of result.route.pathIds) {
+          const path = pathById.get(pathId)!
+          expect(path.stepFree).toBe(true)
+          expect(path.widthM).toBeGreaterThanOrEqual(0.9)
+          expect(path.slopePct).toBeLessThanOrEqual(8)
+        }
+      }
+    }
+    // The stepped Admin to Library shortcut is off limits, but the step-free way round works.
+    const admin = okRoute(combo('admin', 'library', ['wheelchair', 'low_vision']))
+    expect(admin.pathIds).not.toContain(ADMIN_STEPS)
+  })
+
+  it('keeps the fail-safe wording and behaviour', () => {
+    const blocked = [verifiedReport({ pathId: HEALTH_RAMP })]
+    const stepFree = combo('gate', 'health', ['wheelchair', 'low_vision'], blocked)
+    expect(stepFree.status).toBe('no_verified_route')
+    if (stepFree.status !== 'no_verified_route') throw new Error('unreachable')
+    expect(stepFree.message).toBe('No verified step-free route')
+    expect(stepFree.alternative).toBeNull()
+
+    const alley = [verifiedReport({ pathId: 'p-lab-workshop-alley' })]
+    const other = combo('lab', 'workshop', ['crutches', 'low_vision'], alley)
+    expect(other.status).toBe('no_verified_route')
+    if (other.status !== 'no_verified_route') throw new Error('unreachable')
+    expect(other.message).toBe('No verified route for crutches and low vision')
+  })
+
+  it('gives the same result whatever order the profiles are ticked in', () => {
+    for (const a of campus.nodes) {
+      for (const b of campus.nodes) {
+        expect(withoutQuery(combo(a.id, b.id, ['low_vision', 'wheelchair'], [partial]))).toEqual(
+          withoutQuery(combo(a.id, b.id, ['wheelchair', 'low_vision'], [partial])),
+        )
+      }
+    }
   })
 })
