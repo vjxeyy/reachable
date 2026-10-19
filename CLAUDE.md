@@ -139,3 +139,10 @@ Write each decision down here when it is made, so later phases stay consistent.
 10. **Campus**: `areaId` is the campus id (`ashgrove`). The Workshop has no step-free access at all, which
     gives a natural `no_path_for_profile` example. Health Centre is the area whose only step-free link is
     one ramp. Admin to Library and Lab to Lecture Halls each have a stepped shortcut and a longer step-free route.
+11. **Backend** (`server/`): every endpoint lives under `/api` (`/api/reports`, `/api/reports/:id/confirm|clear|verify|resolve`,
+    `/api/route`, `/api/health`, `/api/campus`). Photos are written to `uploads/` and served at `/uploads/...`.
+    Requests may carry `at` (the client's demo clock) so "+6 hours" behaves the same on the server.
+    Admin endpoints have no login in this prototype.
+12. **Store sync**: the browser uses the API when `/api/health` answers, polls every 5 s, and falls back to
+    localStorage (keeping the last server snapshot) when the server is unreachable. It re-checks every 15 s.
+    Reports made offline stay in that browser; they are not uploaded later.

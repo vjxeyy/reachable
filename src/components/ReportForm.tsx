@@ -42,6 +42,8 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
   const [severityTouched, setSeverityTouched] = useState(false)
   const [description, setDescription] = useState('')
   const [photoError, setPhotoError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
   const run = useRef(0)
 
   const suggestion = analysis.state === 'done' ? analysis.result : null
@@ -78,9 +80,11 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
     }
   }
 
-  function submit() {
-    if (!category || !severity) return
-    const report = addReport({
+  async function submit() {
+    if (!category || !severity || saving) return
+    setSaving(true)
+    setSaveError(null)
+    const result = await addReport({
       pathId,
       category,
       severity,
@@ -89,21 +93,23 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
       aiCategory: suggestion ? suggestion.category : null,
       photoUrl: photo?.dataUrl ?? null,
     })
-    onSubmitted(report)
+    setSaving(false)
+    if ('error' in result) setSaveError(result.error)
+    else onSubmitted(result.report)
   }
 
   function onFile(file: File | undefined) {
     if (file) void analysePhoto(() => preparePhoto(file, file.name))
   }
 
-  const canSubmit = category !== null && severity !== null && analysis.state !== 'working'
+  const canSubmit = category !== null && severity !== null && analysis.state !== 'working' && !saving
 
   return (
     <form
       className="report-form"
       onSubmit={(e) => {
         e.preventDefault()
-        submit()
+        void submit()
       }}
     >
       <Step n={1} title="Photo">
@@ -241,8 +247,9 @@ export function ReportForm({ campus, pathId, onSubmitted }: FormProps) {
         New reports start as <strong>unverified</strong>. Routes avoid them whenever another way exists. They block a
         route outright only after 2 more people confirm them or an admin verifies them.
       </p>
+      {saveError && <p className="error">{saveError}</p>}
       <button type="submit" className="btn submit-btn" disabled={!canSubmit}>
-        Submit report on {path ? describePath(campus, path.id) : 'this path'}
+        {saving ? 'Saving…' : `Submit report on ${path ? describePath(campus, path.id) : 'this path'}`}
       </button>
     </form>
   )

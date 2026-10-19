@@ -1281,3 +1281,27 @@ textarea {
     width: 100%;
   }
 }
+
+/* ---------- Data source badge ---------- */
+
+.source {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.source-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--outdated);
+}
+.source-api .source-dot {
+  background: var(--good);
+}
+.source-local .source-dot {
+  background: var(--unverified);
+}

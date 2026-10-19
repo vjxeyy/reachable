@@ -4,7 +4,7 @@ import { ReportList } from '../components/ReportList'
 import { TrustBadge } from '../components/TrustBadge'
 import { withDerivedStatus } from '../core/trust'
 import { CATEGORIES, type Category, type Report, type ReportStatus } from '../core/types'
-import { adminResolve, adminVerify, campus, useNow, useStore } from '../state/store'
+import { adminResolve, adminVerify, campus, notify, useNow, useStore } from '../state/store'
 
 const STATUSES: ReportStatus[] = ['unverified', 'verified', 'outdated', 'cleared']
 const STATUS_ORDER: Record<ReportStatus, number> = { unverified: 0, verified: 1, outdated: 2, cleared: 3 }
@@ -104,11 +104,11 @@ export function Admin() {
             report.status === 'cleared' ? null : (
               <>
                 {report.status !== 'verified' && (
-                  <button type="button" className="btn btn-danger btn-small" onClick={() => adminVerify(report.id)}>
+                  <button type="button" className="btn btn-danger btn-small" onClick={async () => notify((await adminVerify(report.id)) ?? 'Verified. It now blocks routes.')}>
                     {report.status === 'outdated' ? 'Re-verify' : 'Verify'}
                   </button>
                 )}
-                <button type="button" className="btn btn-good btn-small" onClick={() => adminResolve(report.id)}>
+                <button type="button" className="btn btn-good btn-small" onClick={async () => notify((await adminResolve(report.id)) ?? 'Resolved. Routes updated.')}>
                   Resolve
                 </button>
               </>

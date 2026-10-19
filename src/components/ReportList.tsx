@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { describePath } from '../core/graph'
 import type { Campus, Report } from '../core/types'
+import { photoSrc } from '../state/api'
 import { CATEGORY_LABEL, formatAgo, STATUS_LABEL } from './labels'
 
 interface Props {
@@ -24,7 +25,7 @@ export function ReportList({ campus, reports, now, emptyText, showPath = true, o
       {reports.map((report) => (
         <li key={report.id} className={`report-item report-${report.status}`}>
           {report.photoUrl ? (
-            <img className="report-thumb" src={report.photoUrl} alt="" loading="lazy" />
+            <img className="report-thumb" src={photoSrc(report.photoUrl) ?? undefined} alt="" loading="lazy" />
           ) : (
             <div className="report-thumb report-thumb-empty" aria-hidden="true">
               !

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { CampusMap, type MapMarker } from '../components/CampusMap'
 import { ReportSheet } from '../components/ReportForm'
 import { ReportList, VoteButtons } from '../components/ReportList'
@@ -7,7 +7,7 @@ import { RoutePanel, RouteSummary } from '../components/RoutePanel'
 import { findRoute } from '../core/route'
 import { isActive, withDerivedStatus } from '../core/trust'
 import type { Report, ReportStatus } from '../core/types'
-import { campus, castVote, setSelection, useNow, useStore, voteBlocked } from '../state/store'
+import { campus, castVote, notify, setSelection, useNow, useStore, voteBlocked } from '../state/store'
 
 const STATUS_RANK: Record<ReportStatus, number> = { verified: 3, unverified: 2, outdated: 1, cleared: 0 }
 
@@ -31,13 +31,6 @@ export function Home() {
   const now = useNow()
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
-  const [toast, setToast] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!toast) return
-    const timer = setTimeout(() => setToast(null), 4500)
-    return () => clearTimeout(timer)
-  }, [toast])
 
   const result = useMemo(
     () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile }) : null),
@@ -56,9 +49,9 @@ export function Home() {
     <VoteButtons
       report={report}
       blockedReason={(vote) => voteBlocked(report, vote)}
-      onVote={(vote) => {
-        const problem = castVote(report.id, vote)
-        setToast(problem ?? (vote === 'cleared' ? 'Marked cleared. Routes updated.' : 'Thanks, confirmation added.'))
+      onVote={async (vote) => {
+        const problem = await castVote(report.id, vote)
+        notify(problem ?? (vote === 'cleared' ? 'Marked cleared. Routes updated.' : 'Thanks, confirmation added.'))
       }}
     />
   )
@@ -131,7 +124,7 @@ export function Home() {
           onClose={() => setSelectedPathId(null)}
           onSubmitted={() => {
             setSelectedPathId(null)
-            setToast('Report saved. Routes updated.')
+            notify('Report saved. Routes updated.')
           }}
         >
           <ReportList
@@ -145,10 +138,6 @@ export function Home() {
           />
         </ReportSheet>
       )}
-
-      <div className="toast-region" aria-live="polite">
-        {toast && <div className="toast">{toast}</div>}
-      </div>
     </div>
   )
 }
