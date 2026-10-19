@@ -6,8 +6,8 @@ import { TrustBadge } from '../components/TrustBadge'
 import { RoutePanel, RouteSummary } from '../components/RoutePanel'
 import { findRoute } from '../core/route'
 import { isActive, withDerivedStatus } from '../core/trust'
-import type { ProfileId, Report, ReportStatus } from '../core/types'
-import { campus, castVote, useNow, useStore, voteBlocked } from '../state/store'
+import type { Report, ReportStatus } from '../core/types'
+import { campus, castVote, setSelection, useNow, useStore, voteBlocked } from '../state/store'
 
 const STATUS_RANK: Record<ReportStatus, number> = { verified: 3, unverified: 2, outdated: 1, cleared: 0 }
 
@@ -26,11 +26,9 @@ function markersFor(reports: Report[]): MapMarker[] {
 }
 
 export function Home() {
-  const { reports, confirmations } = useStore()
+  const { reports, confirmations, selection } = useStore()
+  const { profile, from, to } = selection
   const now = useNow()
-  const [profile, setProfile] = useState<ProfileId>('wheelchair')
-  const [from, setFrom] = useState('')
-  const [to, setTo] = useState('')
   const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
@@ -79,11 +77,7 @@ export function Home() {
           profile={profile}
           from={from}
           to={to}
-          onChange={(patch) => {
-            if (patch.profile !== undefined) setProfile(patch.profile)
-            if (patch.from !== undefined) setFrom(patch.from)
-            if (patch.to !== undefined) setTo(patch.to)
-          }}
+          onChange={setSelection}
         />
       </div>
       <div className="area-map">

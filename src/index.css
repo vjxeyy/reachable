@@ -1160,3 +1160,124 @@ textarea {
   background: #ede9fe;
   color: #5b21b6;
 }
+
+/* ---------- Navigation ---------- */
+
+.nav {
+  display: flex;
+  gap: 4px;
+}
+.nav a {
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+.nav a[aria-current='page'] {
+  background: var(--primary-soft);
+  color: var(--primary);
+}
+
+/* ---------- Admin ---------- */
+
+.admin {
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+}
+.admin-head h1 {
+  font-size: 1.4rem;
+}
+.admin-head p {
+  margin: 4px 0 0;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat {
+  display: grid;
+  gap: 2px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-top: 4px solid var(--primary);
+}
+.stat-verified {
+  border-top-color: var(--verified);
+}
+.stat-unverified {
+  border-top-color: var(--unverified);
+}
+.stat-outdated {
+  border-top-color: var(--outdated);
+}
+.stat-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.stat-label {
+  font-weight: 700;
+}
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: end;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip-btn {
+  min-height: 38px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-weight: 600;
+  cursor: pointer;
+}
+.chip-btn.is-active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+.chip-count {
+  opacity: 0.75;
+  font-weight: 500;
+}
+.filter-select {
+  min-width: 200px;
+}
+.admin-status {
+  display: grid;
+  gap: 4px;
+}
+.effect {
+  font-weight: 600;
+}
+.admin .report-list {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+}
+
+@media (max-width: 760px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .admin {
+    padding: 12px;
+  }
+  .filter-select {
+    min-width: 0;
+    width: 100%;
+  }
+}

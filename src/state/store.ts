@@ -5,7 +5,7 @@ import { useEffect, useState, useSyncExternalStore } from 'react'
 import campusData from '../../data/campus.json'
 import { loadCampus } from '../core/graph'
 import { voteBlockReason } from '../core/trust'
-import type { Category, Confirmation, Report, Severity, Vote } from '../core/types'
+import type { Category, Confirmation, ProfileId, Report, Severity, Vote } from '../core/types'
 
 export const campus = loadCampus(campusData)
 
@@ -18,7 +18,17 @@ export interface StoreState {
   confirmations: Confirmation[]
   /** Demo clock: how far the app's "now" is ahead of real time. */
   timeOffsetMs: number
+  /** The route being looked at. In memory only, so it survives switching to Admin and back. */
+  selection: Selection
 }
+
+export interface Selection {
+  profile: ProfileId
+  from: string
+  to: string
+}
+
+const EMPTY_SELECTION: Selection = { profile: 'wheelchair', from: '', to: '' }
 
 function readStorage(key: string): string | null {
   try {
@@ -73,7 +83,7 @@ function loadData(): Pick<StoreState, 'reports' | 'confirmations'> {
   return { reports: [], confirmations: [] }
 }
 
-let state: StoreState = { ...loadData(), timeOffsetMs: loadOffset() }
+let state: StoreState = { ...loadData(), timeOffsetMs: loadOffset(), selection: EMPTY_SELECTION }
 const listeners = new Set<() => void>()
 
 function subscribe(listener: () => void): () => void {
@@ -112,6 +122,10 @@ export function useStore(): StoreState {
 /** Current time used for freshness and report ages, including the demo clock offset. */
 export function now(): number {
   return Date.now() + state.timeOffsetMs
+}
+
+export function setSelection(patch: Partial<Selection>): void {
+  setState({ selection: { ...state.selection, ...patch } })
 }
 
 /** Moves the demo clock forward, e.g. +6 hours to show a report going outdated. */
@@ -192,4 +206,20 @@ export function castVote(reportId: string, vote: Vote): string | null {
     reports: state.reports.map((r) => (r.id === reportId ? updated : r)),
   })
   return null
+}
+
+function updateReport(reportId: string, change: (report: Report) => Report): void {
+  setState({ reports: state.reports.map((r) => (r.id === reportId ? change(r) : r)) })
+}
+
+/** Admin verify: the report becomes `verified` at once and counts as freshly seen. */
+export function adminVerify(reportId: string): void {
+  const at = now()
+  updateReport(reportId, (r) => ({ ...r, adminVerifiedAt: at, lastConfirmedAt: Math.max(r.lastConfirmedAt, at) }))
+}
+
+/** Admin resolve: the obstacle is fixed, the report is cleared. */
+export function adminResolve(reportId: string): void {
+  const at = now()
+  updateReport(reportId, (r) => (r.clearedAt === null ? { ...r, clearedAt: at } : r))
 }
