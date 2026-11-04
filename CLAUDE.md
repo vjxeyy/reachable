@@ -114,8 +114,9 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
 - Style rules (checked by `server/style-rules.test.ts`, which fails with file and line): no purple or indigo, no gradients,
   no pill-shaped buttons or tags (corners are 4 to 8 px, panels 16 px), no emoji or glyph icons (use the SVG icons in
   `src/components/icons.tsx`), no em or en dashes, no cursor effects or scroll-driven animation, no fake reviews, counters
-  or metrics, no vague hero text, no AI-looking photos. Demo content is labelled: seeded reports say "Example", sample
-  pictures say "Sample drawing", simulated classifier output says "AI suggestion (demo)".
+  or metrics, no vague hero text, no AI-looking photos. Demo content is labelled: seeded reports say "Example",
+  simulated classifier output says "AI suggestion (demo)". The report form has no sample-drawing buttons (removed by the user);
+  the bundled drawings in `public/samples/` are only the photos of the seeded example reports.
 - Design tokens are the `:root` variables in `src/index.css` (deep green and cream). Text pairs keep at least 4.5:1
   contrast, and a status is never shown by colour alone: the word is always there.
 - Tests never touch the real database. Server tests use an in-memory SQLite database. `server/db.ts` refuses
@@ -203,3 +204,14 @@ Write each decision down here when it is made, so later phases stay consistent.
     are blocked. With no admin configured, admin actions answer 403. Without a server (Vercel) the Dashboard opens with a
     banner saying changes only affect this browser: a password cannot be checked there, so it is not faked.
     Tests use made-up credentials, an in-memory database and an injected clock.
+18. **Partly blocked option and fit check** (`src/core/route.ts`, `src/core/fit.ts`): when no verified route exists, a profile that
+    treats every active obstacle as blocking (low vision, alone or combined) also gets `partialOption`: the best route that crosses
+    no fully blocked path (verified or not) but does cross paths reported as only partly blocked. It is labelled "Partly blocked,
+    use with caution", lists the blockage in `warnings`, and is never shown as the route (status stays `no_verified_route`). Other
+    profiles never need it, because a partial report does not block them. Every route also carries `fit`, a plain-language check
+    for the person: slope and width against the profile's limits, steps, long stretches, a partial block's unknown gap, and
+    "not advised" for low vision on a partly blocked path. Fit only explains; it never upgrades a route.
+19. **OpenRouter classifier** (`src/classifier/openrouter.ts`): models are tried one at a time (a free model that answers with
+    nothing no longer ends the attempt). `max_tokens` is 2000 because the free Gemma and Nemotron models reason first and 300
+    was used up before any JSON came out (the live symptom: "the model sent an empty answer"). Total 25 s, 12 s per model; the
+    server waits 27 s and the browser 30 s. A 401, 402 or 429 stops at once.

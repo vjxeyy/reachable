@@ -55,11 +55,11 @@ export function buildServerClassifier(env: ClassifierEnv, defaultCacheDir: strin
     const models = env.OPENROUTER_MODEL?.split(',')
       .map((m) => m.trim())
       .filter(Boolean)
-    const primary = createOpenRouterClassifier({ apiKey, models, timeoutMs: 9000 })
+    const primary = createOpenRouterClassifier({ apiKey, models, timeoutMs: 25_000 })
     return {
       kind,
       description: `Photo classifier: OpenRouter ${primary.name.replace('openrouter:', '')} (falls back to the demo classifier)`,
-      classifier: withFallback(primary, simulatedClassifier, { timeoutMs: 10_000, failurePrefix: 'OpenRouter unavailable' }),
+      classifier: withFallback(primary, simulatedClassifier, { timeoutMs: 27_000, failurePrefix: 'OpenRouter unavailable' }),
     }
   }
 

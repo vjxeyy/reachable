@@ -6,11 +6,15 @@
 //    (verified or unverified). A route found here is the only kind shown as "the route".
 // 2. Fallback pass: verified blocks stay excluded, unverified blocks cost +200. A route found
 //    here is returned as `no_verified_route` plus this option, labelled "Unverified, use with caution".
-// 3. Nothing found: `no_verified_route` with no option.
+// 3. Partly blocked option (profiles that treat every active obstacle as blocking, i.e. low vision):
+//    a route that crosses no fully blocked path but does cross paths reported as only partly blocked.
+//    Returned as `partialOption`, labelled "Partly blocked, use with caution", and never as the route.
+// 4. Nothing found: `no_verified_route` with no option.
 //
 // So an unverified block is avoided whenever any alternative exists, and an uncertain path is
 // never presented as the route.
 
+import { assessRoute, type RouteFit } from './fit'
 import { graphFor, type CampusGraph } from './graph'
 import {
   hardExclusionReason,
@@ -32,6 +36,7 @@ import type {
 } from './types'
 
 export const UNVERIFIED_LABEL = 'Unverified, use with caution'
+export const PARTIAL_LABEL = 'Partly blocked, use with caution'
 
 export interface RouteQuery {
   from: string
@@ -89,9 +94,14 @@ export interface Route {
   cost: number
   /** True when every leg is step-free in the map data. */
   stepFree: boolean
-  /** `verified`: avoids every blocking report. `unverified`: crosses at least one unverified block. */
-  verification: 'verified' | 'unverified'
+  /**
+   * `verified`: avoids every blocking report. `unverified`: crosses at least one unverified block.
+   * `partial`: crosses paths reported as only partly blocked, which this profile treats as blocking.
+   */
+  verification: 'verified' | 'unverified' | 'partial'
   label: string
+  /** Whether the route suits this person: slope, width, steps and what the reports on it mean for them. */
+  fit: RouteFit
   /** Partial and outdated reports on the route. */
   warnings: ReportImpact[]
   /** Unverified blocks the route crosses (only on unverified routes). */
@@ -123,6 +133,11 @@ export type RouteResult =
       reason: 'no_path_for_profile' | 'blocked_by_reports'
       /** The best route through unverified blocks, never to be shown as the route. */
       alternative: Route | null
+      /**
+       * Recommended when everything is blocked: a route over paths that are only partly blocked, with the
+       * blockage listed in `warnings` and a fit check. Never shown as the route.
+       */
+      partialOption: Route | null
       /** Blocking reports, ideally ones where clearing any single one would restore a route. */
       blockedBy: ReportImpact[]
     }
@@ -154,7 +169,10 @@ function impactOf(
 
 /** Effects of every report on every path, for one profile at one moment. */
 export function computeImpacts(input: RouteInput, profileInput: ProfileInput): ImpactMap {
-  const profile = resolveProfile(profileInput)
+  return impactsFor(input, resolveProfile(profileInput))
+}
+
+function impactsFor(input: RouteInput, profile: Profile): ImpactMap {
   const graph = graphFor(input.campus)
   const impacts: ImpactMap = new Map()
   for (const report of input.reports) {
@@ -266,9 +284,10 @@ function shortest(
   return { nodeIds, legs }
 }
 
-function toRoute(found: Found, profile: Profile, verification: Route['verification']): Route {
+function toRoute(campus: Campus, found: Found, profile: Profile, verification: Route['verification']): Route {
   const impacts = found.legs.flatMap((leg) => leg.impacts)
   return {
+    fit: assessRoute(campus, found.legs, profile),
     nodeIds: found.nodeIds,
     pathIds: found.legs.map((leg) => leg.pathId),
     legs: found.legs,
@@ -276,7 +295,12 @@ function toRoute(found: Found, profile: Profile, verification: Route['verificati
     cost: found.legs.reduce((sum, leg) => sum + leg.cost, 0),
     stepFree: found.legs.every((leg) => leg.stepFree),
     verification,
-    label: verification === 'verified' ? `${profile.routeNoun}, no blocking reports` : UNVERIFIED_LABEL,
+    label:
+      verification === 'verified'
+        ? `${profile.routeNoun}, no blocking reports`
+        : verification === 'partial'
+          ? PARTIAL_LABEL
+          : UNVERIFIED_LABEL,
     warnings: impacts.filter((i) => i.effect === 'partial' || i.effect === 'outdated'),
     unverifiedBlocks: impacts.filter((i) => i.effect === 'unverified_block'),
   }
@@ -318,7 +342,7 @@ export function findRoute(input: RouteInput, query: RouteQuery): RouteResult {
   const strict = shortest(graph, profile, impacts, 'strict', query.from, query.to)
 
   if (strict) {
-    const route = toRoute(strict, profile, 'verified')
+    const route = toRoute(input.campus, strict, profile, 'verified')
     let reroute: Reroute | null = null
     if (usual && !samePathIds(route.pathIds, usual.legs.map((l) => l.pathId))) {
       const chosen = new Set(route.pathIds)
@@ -339,15 +363,35 @@ export function findRoute(input: RouteInput, query: RouteQuery): RouteResult {
 
   const message = profile.noVerifiedRouteText
   if (!usual) {
-    return { status: 'no_verified_route', query, message, reason: 'no_path_for_profile', alternative: null, blockedBy: [] }
+    return {
+      status: 'no_verified_route',
+      query,
+      message,
+      reason: 'no_path_for_profile',
+      alternative: null,
+      partialOption: null,
+      blockedBy: [],
+    }
   }
   const fallback = shortest(graph, profile, impacts, 'fallback', query.from, query.to)
+
+  // Partly blocked option. Only profiles that count every active obstacle as blocking can have one:
+  // for the others a partly blocked path never blocks, so it is already part of a normal route.
+  // Look at the reports as they were filed: full blocks stay out, partial reports become passable with a penalty.
+  let partialOption: Route | null = null
+  if (profile.activeObstacleBlocks) {
+    const asFiled = impactsFor(input, { ...profile, activeObstacleBlocks: false })
+    const partial = shortest(graph, profile, asFiled, 'strict', query.from, query.to)
+    if (partial) partialOption = toRoute(input.campus, partial, profile, 'partial')
+  }
+
   return {
     status: 'no_verified_route',
     query,
     message,
     reason: 'blocked_by_reports',
-    alternative: fallback ? toRoute(fallback, profile, 'unverified') : null,
+    alternative: fallback ? toRoute(input.campus, fallback, profile, 'unverified') : null,
+    partialOption,
     blockedBy: findBlockers(graph, profile, impacts, query, usual),
   }
 }

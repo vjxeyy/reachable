@@ -17,6 +17,9 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
   A report blocks a path outright only after 2 independent confirmations or an admin verify.
 - **Fail-safe.** If every path is blocked, the app says **"No verified step-free route"** instead of drawing a
   risky one. The best unverified option is available on request, labelled *"Unverified, use with caution"*.
+- **Partly blocked option.** If every route is blocked and the person has low vision (which treats any report as a block),
+  the app recommends the best way over paths reported as only partly blocked, lists what is in the way, and says whether
+  it suits them (slope, width, steps, and "not advised alone" for low vision). It is never presented as a verified route.
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm a report with **Still there**. Only the signed-in admin can mark a report
@@ -146,15 +149,15 @@ Either way the user always confirms or corrects the category.
 
 Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. Reset restores the 4 example reports (each is
 tagged **Example**, so nobody mistakes them for real reports), sets the clock back to now and clears the route picker.
-The photo buttons are labelled **Sample drawing**: they are bundled illustrations, not photos.
 
 1. **Route.** Choose From **Library**, To **Hostel**, with **Wheelchair** ticked.
    A step-free route appears (460 m, via the Canteen and the hostel ramp).
-2. **Report.** Tap the **Canteen to Hostel ramp** on the map. Tap **Sample drawing: blocked ramp** (or take a
-   real photo). The app shows *AI suggestion (demo): Blocked ramp*. Tap **Looks right**, then **Submit report**.
+2. **Report.** Tap the **Canteen to Hostel ramp** on the map. Tap **Upload photo** and pick any picture of a
+   blocked ramp (or **Skip the photo and choose the problem myself**). With a photo the app shows an *AI suggestion*
+   (labelled *(demo)* when the real model is off or unavailable). Tap **Looks right** or change it, then **Submit report**.
 3. **Reroute.** The route redraws through Garden Court, with *"Rerouted, 105 m longer than usual, to avoid:
    Blocked ramp … Unverified, reported just now"*.
-4. **Fail-safe.** Tap **Library to Garden Court** on the new route, use **Sample drawing: flooding**, confirm and submit.
+4. **Fail-safe.** Tap **Library to Garden Court** on the new route, add a flooding report the same way, confirm and submit.
    The app says **"No verified step-free route"** and lists both blocks. No route is drawn. The unverified option
    appears dashed only if you tap *Show unverified option on map*.
 5. **Clear.** Tap the hostel ramp again and press **Cleared** on the report. The original route returns. (On the shared

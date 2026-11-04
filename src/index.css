@@ -527,6 +527,38 @@ textarea {
   border: 1px dashed var(--caution);
 }
 
+.fit {
+  margin: 10px 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  background: var(--surface);
+}
+.fit-good {
+  border-left-color: var(--good);
+}
+.fit-caution {
+  border-left-color: var(--caution);
+}
+.fit-bad {
+  border-left-color: var(--verified);
+  background: var(--verified-soft);
+}
+.fit-head {
+  margin: 0 0 4px;
+}
+.fit-notes {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 0.9rem;
+}
+.fit-level {
+  font-weight: 700;
+}
+
 .impacts {
   margin: 0;
   padding-left: 18px;
@@ -1102,12 +1134,6 @@ textarea {
   inset: 0;
   opacity: 0;
   cursor: pointer;
-}
-.sample-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 6px 0 10px;
 }
 .photo-preview {
   display: flex;

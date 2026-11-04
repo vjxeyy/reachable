@@ -222,7 +222,7 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
       </g>
 
       {caution && (
-        <g className="caution-route" aria-label="Unverified option, use with caution">
+        <g className="caution-route" aria-label={caution.label}>
           <polyline points={points(caution, nodes)} className="caution-casing" />
           <polyline points={points(caution, nodes)} className="caution-line" />
         </g>

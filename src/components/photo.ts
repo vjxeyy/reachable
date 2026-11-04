@@ -42,21 +42,3 @@ export async function preparePhoto(file: Blob, fileName: string, maxSize = 720):
     URL.revokeObjectURL(url)
   }
 }
-
-export const SAMPLE_PHOTOS = [
-  { id: 'blocked-ramp', label: 'Sample drawing: blocked ramp' },
-  { id: 'parked-vehicle', label: 'Sample drawing: parked vehicle' },
-  { id: 'flooding', label: 'Sample drawing: flooding' },
-] as const
-
-/** True for a photo that came from one of the bundled sample drawings. */
-export function isSample(photo: Pick<PreparedPhoto, 'fileName'>): boolean {
-  return photo.fileName.startsWith('sample-')
-}
-
-/** Loads one of the bundled sample illustrations as if it were a photo. */
-export async function loadSamplePhoto(id: string): Promise<PreparedPhoto> {
-  const response = await fetch(`/samples/${id}.svg`)
-  if (!response.ok) throw new Error('Sample drawing not found.')
-  return preparePhoto(await response.blob(), `sample-${id}.jpg`)
-}

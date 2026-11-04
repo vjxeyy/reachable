@@ -5,7 +5,7 @@ import { CATEGORIES, type Campus, type Category, type Report, type Severity } fr
 import { addReport } from '../state/store'
 import { CATEGORY_LABEL } from './labels'
 import { CloseIcon } from './icons'
-import { isSample, loadSamplePhoto, preparePhoto, SAMPLE_PHOTOS, type PreparedPhoto } from './photo'
+import { preparePhoto, type PreparedPhoto } from './photo'
 
 /** Severity a category usually has; the user can change it. */
 const DEFAULT_SEVERITY: Record<Category, Severity> = {
@@ -127,9 +127,8 @@ export function ReportForm({ campus, pathId, firstStep = 1, onSubmitted }: FormP
       <Step n={firstStep} title="Photo">
         {photo ? (
           <div className="photo-preview">
-            <img src={photo.dataUrl} alt={isSample(photo) ? 'Sample drawing of the problem' : 'Photo of the problem'} />
+            <img src={photo.dataUrl} alt="Photo of the problem" />
             <div className="photo-side">
-              {isSample(photo) && <p className="muted small">Sample drawing, not a real photo.</p>}
               <label className="btn btn-quiet btn-small file-btn">
                 Replace photo
                 <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
@@ -147,14 +146,6 @@ export function ReportForm({ campus, pathId, firstStep = 1, onSubmitted }: FormP
                 Upload photo
                 <input type="file" accept="image/*" onChange={(e) => onFile(e.target.files?.[0])} />
               </label>
-            </div>
-            <p className="muted small">No photo handy? Use a sample drawing:</p>
-            <div className="sample-row">
-              {SAMPLE_PHOTOS.map((s) => (
-                <button key={s.id} type="button" className="btn btn-ghost btn-small" onClick={() => analysePhoto(() => loadSamplePhoto(s.id))}>
-                  {s.label}
-                </button>
-              ))}
             </div>
             {!noPhoto && (
               <button type="button" className="link-btn" onClick={() => { setNoPhoto(true); setChoosing(true) }}>

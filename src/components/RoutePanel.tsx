@@ -1,5 +1,6 @@
 import { describePath, graphFor } from '../core/graph'
 import { PROFILES } from '../core/profiles'
+import type { RouteFit } from '../core/fit'
 import type { ReportImpact, Route, RouteResult } from '../core/route'
 import { PROFILE_IDS, type Campus, type ProfileId } from '../core/types'
 import { CheckIcon, ProfileIcon, SwapIcon } from './icons'
@@ -170,13 +171,42 @@ function Legs({ campus, route }: { campus: Campus; route: Route }) {
   )
 }
 
+export type OptionKind = 'partial' | 'unverified'
+
+const FIT_CLASS: Record<RouteFit['verdict'], string> = {
+  good: 'fit-good',
+  caution: 'fit-caution',
+  not_advised: 'fit-bad',
+}
+
+/** The fit check: a verdict in words (never colour alone) and the reasons behind it. */
+function FitBlock({ fit }: { fit: RouteFit }) {
+  return (
+    <div className={`fit ${FIT_CLASS[fit.verdict]}`}>
+      <p className="fit-head">
+        <strong>Is it good for you?</strong> {fit.headline}
+      </p>
+      {fit.notes.length > 0 && (
+        <ul className="fit-notes">
+          {fit.notes.map((note, i) => (
+            <li key={`${note.pathId}-${i}`}>
+              <span className="fit-level">{note.level === 'warn' ? 'Take care' : 'Note'}</span> {note.text}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 interface SummaryProps {
   campus: Campus
   result: RouteResult | null
   now: number
   activeReportCount: number
-  showCaution: boolean
-  onToggleCaution: () => void
+  /** Which caution option is drawn on the map, if any. */
+  shownOption: OptionKind | null
+  onToggleOption: (kind: OptionKind) => void
   /** Opens a path's reports, e.g. to confirm or clear a block. */
   onSelectPath?: (pathId: string) => void
 }
@@ -187,8 +217,8 @@ export function RouteSummary({
   result,
   now,
   activeReportCount,
-  showCaution,
-  onToggleCaution,
+  shownOption,
+  onToggleOption,
   onSelectPath,
 }: SummaryProps) {
   if (!result) {
@@ -246,7 +276,10 @@ export function RouteSummary({
     )
   }
 
-  const option = result.alternative
+  const partial = result.partialOption
+  // An unverified option that crosses the same paths as the partly blocked one adds nothing: show one.
+  const same = partial !== null && result.alternative !== null && partial.pathIds.join('>') === result.alternative.pathIds.join('>')
+  const option = same ? null : result.alternative
   return (
     <section className="panel result result-none" role="alert">
       <div className="result-head">
@@ -264,18 +297,40 @@ export function RouteSummary({
           </ul>
         </>
       )}
+      {partial && (
+        <div className="callout callout-caution">
+          <p>
+            <strong>{partial.label}.</strong> Best way round: {formatMetres(partial.lengthM)} over{' '}
+            {partial.warnings.length === 1 ? 'a path' : 'paths'} reported as only partly blocked, never fully blocked. This is
+            not a verified route. What is in the way:
+          </p>
+          <ul className="impacts">
+            {partial.warnings.map((impact) => (
+              <ImpactLine key={impact.reportId} campus={campus} impact={impact} now={now} onSelectPath={onSelectPath} />
+            ))}
+          </ul>
+          <FitBlock fit={partial.fit} />
+          <Legs campus={campus} route={partial} />
+          <button type="button" className="btn btn-ghost" aria-pressed={shownOption === 'partial'} onClick={() => onToggleOption('partial')}>
+            {shownOption === 'partial' ? 'Hide partly blocked option' : 'Show partly blocked option on map'}
+          </button>
+        </div>
+      )}
       {option ? (
         <div className="callout callout-caution">
           <p>
-            <strong>{option.label}.</strong> The best remaining option is {formatMetres(option.lengthM)} and crosses{' '}
-            {option.unverifiedBlocks.length} unverified {option.unverifiedBlocks.length === 1 ? 'block' : 'blocks'}.
+            <strong>{option.label}.</strong> {partial ? 'Another option' : 'The best remaining option'} is{' '}
+            {formatMetres(option.lengthM)} and crosses {option.unverifiedBlocks.length} unverified{' '}
+            {option.unverifiedBlocks.length === 1 ? 'block' : 'blocks'}.
           </p>
-          <button type="button" className="btn btn-ghost" aria-pressed={showCaution} onClick={onToggleCaution}>
-            {showCaution ? 'Hide unverified option' : 'Show unverified option on map'}
+          <FitBlock fit={option.fit} />
+          <button type="button" className="btn btn-ghost" aria-pressed={shownOption === 'unverified'} onClick={() => onToggleOption('unverified')}>
+            {shownOption === 'unverified' ? 'Hide unverified option' : 'Show unverified option on map'}
           </button>
         </div>
       ) : (
-        result.reason === 'blocked_by_reports' && <p className="muted">There is no unverified option either.</p>
+        result.reason === 'blocked_by_reports' &&
+        !partial && <p className="muted">There is no unverified option and no partly blocked path that leads there.</p>
       )}
     </section>
   )

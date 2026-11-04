@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import { CampusMap, type MapMarker } from '../components/CampusMap'
 import { ReportSheet } from '../components/ReportForm'
 import { ReportList } from '../components/ReportList'
-import { RoutePanel, RouteSummary } from '../components/RoutePanel'
-import { findRoute } from '../core/route'
+import { RoutePanel, RouteSummary, type OptionKind } from '../components/RoutePanel'
+import { findRoute, type Route } from '../core/route'
 import { isActive } from '../core/trust'
 import type { Report, ReportStatus } from '../core/types'
 import { campus, notify, setSelection, useStore } from '../state/store'
@@ -29,7 +29,7 @@ export function Home() {
   const { selection, source, auth } = useStore()
   const { profiles, from, to } = selection
   const { reports, confirmations, now, live, visible, renderStatus, renderActions } = useReportViews()
-  const [cautionShownFor, setCautionShownFor] = useState<string | null>(null)
+  const [shownOptionKey, setShownOptionKey] = useState<string | null>(null)
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
 
   const result = useMemo(
@@ -40,10 +40,18 @@ export function Home() {
   const markers = useMemo(() => markersFor(live), [live])
 
   const route = result?.status === 'ok' ? result.route : null
-  const option = result?.status === 'no_verified_route' ? result.alternative : null
-  // The unverified option is drawn only after the user asks, and only for the option they asked about.
-  const optionKey = option ? `${profiles.join(',')}:${option.pathIds.join('>')}` : null
-  const showCaution = optionKey !== null && cautionShownFor === optionKey
+  const partialOption = result?.status === 'no_verified_route' ? result.partialOption : null
+  const unverifiedOption = result?.status === 'no_verified_route' ? result.alternative : null
+  // A caution option is drawn only after the user asks, and only the one they asked about.
+  const optionKey = (kind: OptionKind, option: Route | null) =>
+    option ? `${kind}:${profiles.join(',')}:${option.pathIds.join('>')}` : null
+  const shownOption: OptionKind | null =
+    partialOption && shownOptionKey === optionKey('partial', partialOption)
+      ? 'partial'
+      : unverifiedOption && shownOptionKey === optionKey('unverified', unverifiedOption)
+        ? 'unverified'
+        : null
+  const drawnOption = shownOption === 'partial' ? partialOption : shownOption === 'unverified' ? unverifiedOption : null
 
   return (
     <div className="home">
@@ -69,7 +77,7 @@ export function Home() {
             campus={campus}
             profiles={profiles}
             route={route}
-            caution={showCaution ? option : null}
+            caution={drawnOption}
             from={from}
             to={to}
             markers={markers}
@@ -89,8 +97,10 @@ export function Home() {
           result={result}
           now={now}
           activeReportCount={activeCount}
-          showCaution={showCaution}
-          onToggleCaution={() => setCautionShownFor(showCaution ? null : optionKey)}
+          shownOption={shownOption}
+          onToggleOption={(kind) =>
+            setShownOptionKey(shownOption === kind ? null : optionKey(kind, kind === 'partial' ? partialOption : unverifiedOption))
+          }
           onSelectPath={setSelectedPathId}
         />
       </div>
@@ -173,7 +183,7 @@ function MapLegend() {
         <svg width="34" height="12" aria-hidden="true">
           <line x1="2" y1="6" x2="32" y2="6" className="legend-caution" />
         </svg>
-        Unverified option
+        Option to use with caution
       </li>
       <li>
         <span className="legend-dot legend-verified" /> Verified

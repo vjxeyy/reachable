@@ -2,7 +2,7 @@
 
 import { createServer, type IncomingMessage, type Server } from 'node:http'
 import type { AddressInfo } from 'node:net'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { withFallback } from '../src/classifier'
 import { createOpenRouterClassifier, DEFAULT_OPENROUTER_MODELS, parseScores } from '../src/classifier/openrouter'
 import { simulatedClassifier } from '../src/classifier/simulated'
@@ -15,6 +15,9 @@ type Reply = { status?: number; delayMs?: number; json: unknown }
 let server: Server
 let baseUrl: string
 let reply: Reply
+/** When set, replaces `reply` for the Nth request of a test (0 = first). */
+let replies: Reply[] | null = null
+let requests: Record<string, unknown>[] = []
 let seen: { headers: IncomingMessage['headers']; body: Record<string, unknown> } | null = null
 
 const completion = (content: unknown, model = 'google/gemma-4-26b-a4b-it:free') => ({
@@ -27,10 +30,12 @@ beforeAll(async () => {
     req.on('data', (chunk) => (raw += chunk))
     req.on('end', () => {
       seen = { headers: req.headers, body: JSON.parse(raw) }
+      requests.push(seen.body)
+      const r = replies ? (replies[requests.length - 1] ?? replies[replies.length - 1]) : reply
       setTimeout(() => {
-        res.writeHead(reply.status ?? 200, { 'content-type': 'application/json' })
-        res.end(JSON.stringify(reply.json))
-      }, reply.delayMs ?? 0)
+        res.writeHead(r.status ?? 200, { 'content-type': 'application/json' })
+        res.end(JSON.stringify(r.json))
+      }, r.delayMs ?? 0)
     })
   })
   server.listen(0, '127.0.0.1')
@@ -40,6 +45,11 @@ beforeAll(async () => {
 
 afterAll(() => {
   server.close()
+})
+
+beforeEach(() => {
+  replies = null
+  requests = []
 })
 
 const make = (extra = {}) => createOpenRouterClassifier({ apiKey: 'test-key', baseUrl, ...extra })
@@ -53,11 +63,14 @@ describe('OpenRouter classifier', () => {
 
     expect(seen!.headers.authorization).toBe('Bearer test-key')
     const body = seen!.body as {
-      models: string[]
+      model: string
+      max_tokens: number
       messages: { role: string; content: { type: string; image_url?: { url: string }; text?: string }[] }[]
     }
-    expect(body.models).toEqual(DEFAULT_OPENROUTER_MODELS)
-    expect(body.models.every((m) => m.endsWith(':free'))).toBe(true)
+    expect(body.model).toBe(DEFAULT_OPENROUTER_MODELS[0])
+    expect(DEFAULT_OPENROUTER_MODELS.every((m) => m.endsWith(':free'))).toBe(true)
+    // Room for a reasoning model to think and still write the JSON (300 left an empty answer).
+    expect(body.max_tokens).toBeGreaterThanOrEqual(1000)
     const [image, text] = body.messages[0].content
     expect(image.image_url!.url).toBe(`data:image/jpeg;base64,${btoa('\x01\x02\x03\x04')}`)
     expect(text.text).toContain('blocked_ramp')
@@ -74,10 +87,34 @@ describe('OpenRouter classifier', () => {
     expect((await make().classify(input)).category).toBe('parked_vehicle')
   })
 
-  it('uses a custom model list, at most three', async () => {
-    reply = completion(JSON.stringify(SCORES))
-    await make({ models: ['a:free', 'b:free', 'c:free', 'd:free'] }).classify(input)
-    expect((seen!.body as { models: string[] }).models).toEqual(['a:free', 'b:free', 'c:free'])
+  it('tries the next model when one sends an empty answer, and uses at most three', async () => {
+    replies = [completion(''), { status: 500, json: {} }, completion(JSON.stringify(SCORES), 'c:free')]
+    const result = await make({ models: ['a:free', 'b:free', 'c:free', 'd:free'] }).classify(input)
+    expect(requests.map((r) => r.model)).toEqual(['a:free', 'b:free', 'c:free'])
+    expect(result).toMatchObject({ source: 'real', model: 'c:free' })
+  })
+
+  it('stops at once on a rejected key or the daily limit instead of trying more models', async () => {
+    replies = [{ status: 429, json: {} }, completion(JSON.stringify(SCORES))]
+    await expect(make({ models: ['a:free', 'b:free'] }).classify(input)).rejects.toThrow(/rate limited/)
+    expect(requests).toHaveLength(1)
+  })
+
+  it('says what every model did when none gives a usable answer', async () => {
+    replies = [completion(''), completion('I cannot tell.')]
+    await expect(make({ models: ['x/a:free', 'x/b:free'] }).classify(input)).rejects.toThrow(/a: the model sent an empty answer.*b: the answer had no JSON/)
+  })
+
+  it('reads an answer sent as a list of text parts, or left in the reasoning text', async () => {
+    reply = completion([{ type: 'text', text: JSON.stringify(SCORES) }])
+    expect((await make().classify(input)).category).toBe('parked_vehicle')
+    reply = { json: { model: 'm:free', choices: [{ message: { content: '', reasoning: 'Thinking... ' + JSON.stringify(SCORES) } }] } }
+    expect((await make().classify(input)).category).toBe('parked_vehicle')
+  })
+
+  it('names why an empty answer was empty', async () => {
+    reply = { json: { model: 'm:free', choices: [{ finish_reason: 'length', message: { content: null } }] } }
+    await expect(make().classify(input)).rejects.toThrow(/empty answer \(stopped: length\)/)
   })
 
   it.each([

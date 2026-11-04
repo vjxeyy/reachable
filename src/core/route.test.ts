@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import campusData from '../../data/campus.json'
 import { graphFor, loadCampus } from './graph'
 import { hardExclusionReason, PROFILES } from './profiles'
-import { findRoute, UNVERIFIED_LABEL, type RouteResult } from './route'
+import { findRoute, PARTIAL_LABEL, UNVERIFIED_LABEL, type RouteResult } from './route'
 import { DECAY_MS } from './trust'
 import type { Confirmation, ProfileId, Report } from './types'
 
@@ -421,5 +421,78 @@ describe('combined profiles', () => {
         )
       }
     }
+  })
+})
+
+describe('partly blocked option when everything is blocked', () => {
+  const partialOnRamp = (overrides: Partial<Report> = {}) =>
+    verifiedReport({ pathId: HEALTH_RAMP, category: 'parked_vehicle', severity: 'partial', ...overrides })
+  const combo = (reports: Report[], profile: ProfileId[]) => findRoute({ campus, reports, confirmations: [], now: NOW }, { from: 'gate', to: 'health', profile })
+
+  it('recommends the partly blocked path for a profile that counts every obstacle as blocking, and lists the blockage', () => {
+    const result = combo([partialOnRamp()], ['wheelchair', 'low_vision'])
+    expect(result.status).toBe('no_verified_route')
+    if (result.status !== 'no_verified_route') throw new Error('unreachable')
+    // Never shown as the route: the status stays no_verified_route and the label says so.
+    expect(result.message).toBe('No verified step-free route')
+    const option = result.partialOption
+    expect(option).not.toBeNull()
+    expect(option!.verification).toBe('partial')
+    expect(option!.label).toBe(PARTIAL_LABEL)
+    expect(option!.pathIds).toContain(HEALTH_RAMP)
+    expect(option!.warnings.map((w) => [w.pathId, w.category, w.effect])).toEqual([[HEALTH_RAMP, 'parked_vehicle', 'partial']])
+    // The verified partial report is a block for low vision, so there is no unverified-block option.
+    expect(result.alternative).toBeNull()
+  })
+
+  it('never recommends a route over a fully blocked path, verified or not', () => {
+    for (const verified of [true, false]) {
+      const block = verified ? verifiedReport({ pathId: HEALTH_RAMP }) : report({ pathId: HEALTH_RAMP })
+      const result = combo([block], ['wheelchair', 'low_vision'])
+      if (result.status !== 'no_verified_route') throw new Error('unreachable')
+      expect(result.partialOption).toBeNull()
+    }
+  })
+
+  it('has no partly blocked option for profiles where a partial report never blocks', () => {
+    const wheelchair = combo([partialOnRamp()], ['wheelchair'])
+    expect(wheelchair.status).toBe('ok')
+    const none = combo([verifiedReport({ pathId: HEALTH_RAMP })], ['wheelchair'])
+    if (none.status !== 'no_verified_route') throw new Error('unreachable')
+    expect(none.partialOption).toBeNull()
+  })
+
+  it('says whether the option suits the person: not advised for low vision, with the reason', () => {
+    const result = combo([partialOnRamp()], ['wheelchair', 'low_vision'])
+    if (result.status !== 'no_verified_route' || !result.partialOption) throw new Error('unreachable')
+    const fit = result.partialOption.fit
+    expect(fit.verdict).toBe('not_advised')
+    expect(fit.notes.some((n) => n.pathId === HEALTH_RAMP && n.level === 'warn' && /do not go alone/.test(n.text))).toBe(true)
+  })
+
+  it('checks slope and width against the profile, and warns about a gap of unknown size', () => {
+    // Wheelchair on the Health ramp (1.6 m wide, 7% slope, limit 8%): steep for them; a partial block leaves an unknown gap.
+    const withReport = okRoute(combo([partialOnRamp()], ['wheelchair']))
+    expect(withReport.fit.verdict).toBe('caution')
+    const text = withReport.fit.notes.map((n) => n.text).join(' | ')
+    expect(text).toMatch(/steep for this profile, 7% against a limit of 8%/)
+    expect(text).toMatch(/gap left is not known/)
+
+    const clear = okRoute(route('gate', 'health'))
+    expect(clear.fit.notes.some((n) => /gap left is not known/.test(n.text))).toBe(false)
+  })
+
+  it('crossing an unverified full block is flagged on the unverified option', () => {
+    const result = route('gate', 'health', 'wheelchair', [report({ pathId: HEALTH_RAMP })])
+    if (result.status !== 'no_verified_route' || !result.alternative) throw new Error('unreachable')
+    expect(result.alternative.fit.verdict).toBe('caution')
+    expect(result.alternative.fit.notes.some((n) => /not yet confirmed/.test(n.text))).toBe(true)
+  })
+
+  it('gives the same answer every time', () => {
+    const one = partialOnRamp()
+    const a = combo([one], ['wheelchair', 'low_vision'])
+    const b = combo([one], ['wheelchair', 'low_vision'])
+    expect(a).toEqual(b)
   })
 })
