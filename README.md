@@ -28,7 +28,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
   on the route) with **Pause**, **Resume** and **Stop**, and lists the same steps on screen while it reads. It uses the browser's own
   speech features: recognition works in Chrome, Edge and Safari (not Firefox) and the browser may send the audio to its speech
   service; reading aloud works in most browsers. Where a feature is missing the app says so and the lists keep working.
-- **Voice guide for blind or low vision.** The first screen asks how you will use REACHABLE. **Blind or low vision** opens a screen with
+- **Voice guide for blind or low vision.** The first screen asks how you will use REACHABLE, and it also speaks the two choices and hears your answer (say "blind or low vision" or "campus map") after one key press or tap; the buttons work too. **Blind or low vision** opens a screen with
   no buttons or fields: it speaks, listens, asks for your start and destination, reads each back for a yes or no, then reads the route
   one step at a time using only the route data (distance and steps; the data has no travel times, and it says so). Say repeat, pause,
   resume, stop, next, change start, change destination, start over, help or return to map at any time. If a report changes the route

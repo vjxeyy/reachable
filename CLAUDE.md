@@ -242,3 +242,4 @@ Write each decision down here when it is made, so later phases stay consistent.
     the microphone is on only while an answer or command is expected, and it gives up after 6 silent windows (any key or tap wakes it). Commands are not heard
     mid sentence, because a microphone left on while the speaker talks hears itself. "Return to map" and Escape leave. The "Change how you use REACHABLE" link
     under the map page returns to the welcome choice.
+    The welcome page also speaks and listens (`src/voice/welcomeChoice.ts`, `Welcome.tsx`): after one key or tap (a browser rule; a click that brought the person there already counts) it says the two choices, hears "blind or low vision" or "campus map" (both or neither is asked again), says it is opening it, and goes. The buttons stay and always work; silence, a blocked microphone or no speech support are explained aloud and the buttons remain.
