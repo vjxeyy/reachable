@@ -28,6 +28,14 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
   on the route) with **Pause**, **Resume** and **Stop**, and lists the same steps on screen while it reads. It uses the browser's own
   speech features: recognition works in Chrome, Edge and Safari (not Firefox) and the browser may send the audio to its speech
   service; reading aloud works in most browsers. Where a feature is missing the app says so and the lists keep working.
+- **Voice guide for blind or low vision.** The first screen asks how you will use REACHABLE. **Blind or low vision** opens a screen with
+  no buttons or fields: it speaks, listens, asks for your start and destination, reads each back for a yes or no, then reads the route
+  one step at a time using only the route data (distance and steps; the data has no travel times, and it says so). Say repeat, pause,
+  resume, stop, next, change start, change destination, start over, help or return to map at any time. If a report changes the route
+  while it is reading, it says what was reported and how verified it is, recalculates with the usual rules, and says clearly when no
+  safe route is left. It uses the Low vision profile. Commands are heard when it asks and in a short pause after each step, not in
+  the middle of a sentence. Needs Chrome, Edge or Safari for hearing you; without it, or with the microphone blocked, it says so and
+  offers a link to the campus map.
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm a report with **Still there**. Only the signed-in admin can mark a report

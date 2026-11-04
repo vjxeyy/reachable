@@ -1855,3 +1855,77 @@ textarea {
     flex: 1 1 100%;
   }
 }
+
+/* ---------- Welcome and the voice guide ---------- */
+.welcome {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 32px 0;
+  display: grid;
+  gap: 16px;
+}
+.welcome h1 {
+  font-size: 28px;
+}
+.welcome-choices {
+  display: grid;
+  gap: 16px;
+}
+.welcome-choice {
+  justify-content: flex-start;
+  gap: 16px;
+  min-height: 88px;
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 18px;
+}
+.welcome-choice > span {
+  display: grid;
+  gap: 4px;
+}
+.welcome-sub {
+  font-size: 15px;
+  font-weight: 400;
+}
+.experience-link {
+  margin: 16px auto 0;
+  text-align: center;
+  font-size: 14px;
+}
+.voice-guide {
+  min-height: 100vh;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 24px;
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--bg);
+  color: var(--text);
+}
+.voice-guide h1 {
+  font-size: 22px;
+  color: var(--muted);
+}
+.voice-guide-line {
+  max-width: 34ch;
+  margin: 0;
+  font-size: 30px;
+  line-height: 1.35;
+  font-weight: 600;
+  min-height: 3em;
+}
+.voice-guide-status {
+  margin: 0;
+  font-size: 18px;
+  color: var(--muted);
+}
+.voice-guide-exit {
+  margin: 0;
+  font-size: 20px;
+}
+@media (max-width: 480px) {
+  .voice-guide-line {
+    font-size: 24px;
+  }
+}

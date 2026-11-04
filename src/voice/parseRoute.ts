@@ -17,7 +17,7 @@ export interface ParsedRoute {
   problems: string[]
 }
 
-type Match = { id: string } | { problem: string }
+export type Match = { id: string } | { problem: string }
 
 /** Ways a profile is said aloud. Longer phrases come first so "wheelchairs" is not cut short. */
 const PROFILE_WORDS: Record<ProfileId, string[]> = {
@@ -131,6 +131,17 @@ function matchPlace(phrase: string, campus: Campus): Match {
     if (scored.length > 1) return { problem: `"${heard}" could be ${nameList(scored.slice(0, 3).map(({ p }) => p.name))}.` }
   }
   return { problem: `I did not recognise "${heard}" as a place.` }
+}
+
+/** Words that lead into a single spoken place: "from the hostel", "I am at the library", "take me to canteen". */
+const PLACE_LEAD_IN = /^(?:(?:i am|i m|im|we are|we re)\s+(?:at|in|near|by)\s+|(?:starting|start|begin)\s+(?:at|from|in)\s+|(?:going|go|take me|bring me|walk|head)\s+(?:to|towards)\s+|from\s+|to\s+|at\s+|towards\s+)+/
+
+/**
+ * One spoken place, whichever of "from" or "to" it came with: "hostel", "from the hostel", "I am at the library".
+ * Same matcher as the route finder, so it also never guesses: an unknown or ambiguous place gives a problem sentence.
+ */
+export function parsePlace(text: string, campus: Campus): Match {
+  return matchPlace(normalise(text).replace(PLACE_LEAD_IN, ''), campus)
 }
 
 /** Splits the sentence into the words after "from" and the words after "to". */

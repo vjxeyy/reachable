@@ -5,18 +5,24 @@ import { Admin } from './pages/Admin'
 import { Home } from './pages/Home'
 import { Login } from './pages/Login'
 import { Report } from './pages/Report'
+import { VoiceGuide } from './pages/VoiceGuide'
+import { Welcome } from './pages/Welcome'
+import { getExperience, setExperience } from './state/experience'
 import { advanceClock, dismissToast, logout, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
 
-type Page = 'map' | 'report' | 'admin' | 'login'
+type Page = 'map' | 'report' | 'admin' | 'login' | 'welcome' | 'voice'
 
 function pageFromHash(): Page {
   const hash = window.location.hash
   if (hash.startsWith('#/admin')) return 'admin'
   if (hash.startsWith('#/report')) return 'report'
   if (hash.startsWith('#/login')) return 'login'
-  return 'map'
+  if (hash.startsWith('#/voice')) return 'voice'
+  if (hash.startsWith('#/welcome')) return 'welcome'
+  // The map is what opens first, once the person has said they want it. Until then they are asked.
+  return getExperience() === 'map' ? 'map' : 'welcome'
 }
 
 function usePage(): Page {
@@ -123,6 +129,17 @@ function DemoFooter() {
 function App() {
   const page = usePage()
   useEffect(() => startSync(), [])
+  // The voice guide has no header, links or buttons: it is spoken, and the page is only its title and the line being said.
+  if (page === 'voice') return <VoiceGuide />
+  if (page === 'welcome') {
+    return (
+      <div className="app">
+        <main className="main">
+          <Welcome />
+        </main>
+      </div>
+    )
+  }
   return (
     <div className="app">
       <header className="topbar">
@@ -150,6 +167,11 @@ function App() {
       <main className="main">
         {page === 'admin' ? <Admin /> : page === 'login' ? <Login /> : page === 'report' ? <Report /> : <Home />}
       </main>
+      <p className="experience-link">
+        <a href="#/welcome" onClick={() => setExperience(null)}>
+          Change how you use REACHABLE
+        </a>
+      </p>
       <DemoFooter />
       <Toast />
     </div>

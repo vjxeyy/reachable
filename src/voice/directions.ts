@@ -44,10 +44,19 @@ function sentence(text: string): string {
   return /[.!?]$/.test(t) ? t : `${t}.`
 }
 
+/** What a report says, spoken: the problem, the road, how bad it is, how sure we are, and how old it is. */
+export function reportText(
+  campus: Campus,
+  report: Pick<ReportImpact, 'pathId' | 'category' | 'severity' | 'status' | 'createdAt'>,
+  now: number,
+): string {
+  const where = describePath(campus, report.pathId)
+  const kind = report.severity === 'blocked' ? 'reported as blocked' : 'reported as partly blocked'
+  return `${CATEGORY_LABEL[report.category]} on ${where}, ${kind}, ${STATUS_LABEL[report.status].toLowerCase()}, reported ${spokenAgo(now - report.createdAt)}`
+}
+
 function impactText(campus: Campus, impact: ReportImpact, now: number): string {
-  const where = describePath(campus, impact.pathId)
-  const kind = impact.severity === 'blocked' ? 'reported as blocked' : 'reported as partly blocked'
-  return `${CATEGORY_LABEL[impact.category]} on ${where}, ${kind}, ${STATUS_LABEL[impact.status].toLowerCase()}, reported ${spokenAgo(now - impact.createdAt)}`
+  return reportText(campus, impact, now)
 }
 
 /**

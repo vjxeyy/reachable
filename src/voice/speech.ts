@@ -104,6 +104,55 @@ export function stopSpeech(): void {
   if (state.owner !== null && state.status !== 'idle') set({ ...state, status: 'idle', index: 0, ended: 'stopped' })
 }
 
+// ---------- One spoken line at a time (the voice guide) ----------
+
+/** Browsers only allow speech after a tap. Called inside the tap, it lets later speech through. */
+export function unlockSpeech(): void {
+  if (!canSpeak()) return
+  const utterance = new SpeechSynthesisUtterance('')
+  utterance.volume = 0
+  window.speechSynthesis.speak(utterance)
+}
+
+let sayToken = 0
+const sayHeld: SpeechSynthesisUtterance[] = []
+
+/**
+ * Speaks one line and resolves when it has finished, been cut off or failed. A new line stops the one
+ * before it, so two lines are never heard at once. Never rejects.
+ */
+export function say(text: string): Promise<void> {
+  if (!canSpeak() || !text.trim()) return Promise.resolve()
+  stopSpeech()
+  const mine = ++sayToken
+  return new Promise<void>((resolve) => {
+    const utterance = new SpeechSynthesisUtterance(text)
+    utterance.lang = voiceLanguage()
+    let finished = false
+    const finish = () => {
+      if (finished) return
+      finished = true
+      clearTimeout(guard)
+      if (mine === sayToken) sayHeld.length = 0
+      resolve()
+    }
+    // Chrome sometimes never reports the end of an utterance, so a long enough wait ends it.
+    const guard = setTimeout(finish, 4000 + text.length * 110)
+    utterance.onend = finish
+    utterance.onerror = finish
+    sayHeld.length = 0
+    sayHeld.push(utterance)
+    window.speechSynthesis.speak(utterance)
+  })
+}
+
+/** Cuts off whatever is being said, at once. */
+export function stopNow(): void {
+  sayToken++
+  sayHeld.length = 0
+  stopSpeech()
+}
+
 // ---------- Hearing one request ----------
 
 export type ListenError = 'denied' | 'no_speech' | 'no_microphone' | 'network' | 'other'
@@ -143,6 +192,11 @@ export function canListen(): boolean {
 /** The microphone stops by itself after this long without speech. */
 const SILENCE_LIMIT_MS = 8000
 
+export interface ListenOptions {
+  /** A shorter window, used between spoken steps where silence just means "carry on". */
+  silenceMs?: number
+}
+
 export interface ListenHandlers {
   onListening: () => void
   /** The person stopped talking and the browser is working out the words. */
@@ -154,7 +208,7 @@ export interface ListenHandlers {
 }
 
 /** Starts the microphone for one request. Returns a function that cancels it. */
-export function listenOnce(handlers: ListenHandlers): () => void {
+export function listenOnce(handlers: ListenHandlers, options: ListenOptions = {}): () => void {
   const Recognition = recognitionConstructor()
   if (!Recognition) {
     handlers.onError('other')
@@ -169,7 +223,7 @@ export function listenOnce(handlers: ListenHandlers): () => void {
   let gotText = false
   let failed = false
   let cancelled = false
-  const timer = setTimeout(() => recognition.stop(), SILENCE_LIMIT_MS)
+  const timer = setTimeout(() => recognition.stop(), options.silenceMs ?? SILENCE_LIMIT_MS)
 
   recognition.onstart = () => handlers.onListening()
   recognition.onspeechend = () => handlers.onProcessing()
