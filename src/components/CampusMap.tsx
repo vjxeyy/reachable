@@ -50,7 +50,7 @@ function labelPlacement(node: CampusNode, campus: Campus) {
 }
 
 /**
- * Where a path's report marker and slope badge go: the middle of the road, slid along it when the
+ * Where a path's report marker goes: the middle of the road, slid along it when the
  * middle would sit on top of a place's name.
  */
 function roadSpot(a: CampusNode, b: CampusNode, campus: Campus, margin = 16) {
@@ -78,12 +78,6 @@ function labelLines(name: string): string[] {
   if (words.length < 2) return [name]
   const cut = Math.ceil(words.length / 2)
   return [words.slice(0, cut).join(' '), words.slice(cut).join(' ')]
-}
-
-function badgeText(kind: ReturnType<typeof pathKind>, slopePct: number, widthM: number): string | null {
-  if (kind === 'ramp' || kind === 'steep') return `${slopePct}%`
-  if (kind === 'narrow') return `${widthM} m`
-  return null
 }
 
 function onKeyActivate(event: KeyboardEvent, action: () => void) {
@@ -241,22 +235,6 @@ export function CampusMap({ campus, profiles, route, caution, from, to, markers 
             })}
         </g>
       )}
-
-      <g className="badges" aria-hidden="true">
-        {campus.paths.map((path) => {
-          const a = nodes.get(path.from)
-          const b = nodes.get(path.to)
-          const badge = badgeText(pathKind(path), path.slopePct, path.widthM)
-          if (!a || !b || !badge) return null
-          const mid = roadSpot(a, b, campus, 4)
-          const excluded = prof ? hardExclusionReason(prof, path) !== null : false
-          return (
-            <text key={path.id} x={mid.x + 14} y={mid.y - 14} className={`path-badge${excluded ? ' path-excluded' : ''}`}>
-              {badge}
-            </text>
-          )
-        })}
-      </g>
 
       <g className="markers">
         {markers.map((marker) => {

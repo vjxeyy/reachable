@@ -731,16 +731,6 @@ textarea {
   stroke: #facc15;
   stroke-width: 28;
 }
-.path-badge {
-  font-size: 17px;
-  font-weight: 700;
-  fill: #44574f;
-  text-anchor: middle;
-  paint-order: stroke;
-  stroke: var(--map-bg);
-  stroke-width: 5px;
-  pointer-events: none;
-}
 .path-hit {
   stroke: transparent;
   stroke-width: 36;
@@ -893,9 +883,6 @@ textarea {
   .node-label {
     font-size: 30px;
     stroke-width: 7px;
-  }
-  .path-badge {
-    font-size: 24px;
   }
   .marker polygon {
     transform: scale(1.25);
