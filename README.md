@@ -20,6 +20,12 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Partly blocked option.** If every route is blocked and the person has low vision (which treats any report as a block),
   the app recommends the best way over paths reported as only partly blocked, lists what is in the way, and says whether
   it suits them (slope, width, steps, and "not advised alone" for low vision). It is never presented as a verified route.
+- **Voice input and spoken directions.** In **Find a route**, press **Speak a route** and say "from Hostel to Canteen".
+  The app shows what it heard and the places it understood, you can change them, and nothing is applied until you press
+  **Use these**. On a route result, **Read directions aloud** reads short steps (steps, ramps, slopes, narrow paths and the reports
+  on the route) with **Pause**, **Resume** and **Stop**, and lists the same steps on screen while it reads. It uses the browser's own
+  speech features: recognition works in Chrome, Edge and Safari (not Firefox) and the browser may send the audio to its speech
+  service; reading aloud works in most browsers. Where a feature is missing the app says so and the lists keep working.
 - **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
 - **Still there / Cleared.** Anyone can confirm a report with **Still there**. Only the signed-in admin can mark a report

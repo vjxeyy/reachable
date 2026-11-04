@@ -1772,3 +1772,99 @@ textarea {
   border-radius: 8px;
   background: var(--unverified-soft);
 }
+
+/* ---------- Voice: speak a route, read directions aloud ---------- */
+
+.voice-route {
+  margin-top: 12px;
+  display: grid;
+  gap: 6px;
+}
+.voice-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+}
+.voice-btn {
+  min-height: 48px;
+  padding: 8px 16px;
+}
+.voice-status,
+.read-status {
+  margin: 0;
+  min-height: 1.3em;
+  font-weight: 600;
+  color: var(--text);
+}
+.voice-note,
+.read-note {
+  margin: 0;
+}
+.voice-review {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--primary-soft);
+}
+.voice-review-title {
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+.voice-review-title:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.voice-pickers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.voice-problems {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text);
+  font-weight: 600;
+}
+.voice-actions,
+.read-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.read-aloud {
+  margin: 12px 0 4px;
+  display: grid;
+  gap: 6px;
+}
+.read-steps {
+  margin: 0;
+  padding: 10px 12px 10px 30px;
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  font-size: 0.95rem;
+}
+.read-steps .is-now {
+  font-weight: 600;
+  background: var(--primary-soft);
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.now-reading {
+  color: var(--primary-dark);
+}
+
+@media (max-width: 480px) {
+  .voice-pickers {
+    grid-template-columns: 1fr;
+  }
+  .voice-btn {
+    flex: 1 1 100%;
+  }
+}

@@ -4,6 +4,9 @@ import type { RouteFit } from '../core/fit'
 import type { ReportImpact, Route, RouteResult } from '../core/route'
 import { PROFILE_IDS, type Campus, type ProfileId } from '../core/types'
 import { CheckIcon, ProfileIcon, SwapIcon } from './icons'
+import { ReadAloud } from './ReadAloud'
+import { StopSelect } from './StopSelect'
+import { VoiceRoute } from './VoiceRoute'
 import { CATEGORY_LABEL, formatAgo, formatMetres, STATUS_LABEL } from './labels'
 
 interface PanelProps {
@@ -16,35 +19,6 @@ interface PanelProps {
 
 /** Profile, start and destination pickers. */
 const DEFAULT_PROFILES: ProfileId[] = ['wheelchair']
-
-function StopSelect({
-  label,
-  placeholder,
-  value,
-  campus,
-  onPick,
-}: {
-  label: string
-  placeholder: string
-  value: string
-  campus: Campus
-  onPick: (id: string) => void
-}) {
-  const sorted = [...campus.nodes].sort((a, b) => a.name.localeCompare(b.name))
-  return (
-    <label className="field">
-      <span>{label}</span>
-      <select value={value} onChange={(e) => onPick(e.target.value)}>
-        <option value="">{placeholder}</option>
-        {sorted.map((n) => (
-          <option key={n.id} value={n.id}>
-            {n.name}
-          </option>
-        ))}
-      </select>
-    </label>
-  )
-}
 
 /** Start and destination stacked, then the profile check boxes. */
 export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps) {
@@ -71,6 +45,7 @@ export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps)
           <SwapIcon />
         </button>
       </div>
+      <VoiceRoute campus={campus} from={from} to={to} onApply={(f, t) => onChange({ from: f, to: t })} />
       <fieldset className="profiles">
         <legend>Profile</legend>
         {PROFILE_IDS.map((id) => {
@@ -268,6 +243,13 @@ export function RouteSummary({
           </div>
         )}
         {route.legs.length > 0 && <Legs campus={campus} route={route} />}
+        <ReadAloud
+          campus={campus}
+          route={route}
+          reroute={reroute}
+          now={now}
+          ownerKey={`ok:${result.query.from}>${result.query.to}:${route.label}:${route.pathIds.join('>')}`}
+        />
         <p className="fine">
           Based on the campus map and {activeReportCount} live {activeReportCount === 1 ? 'report' : 'reports'}.
           Conditions change, so check on site.
@@ -311,6 +293,7 @@ export function RouteSummary({
           </ul>
           <FitBlock fit={partial.fit} />
           <Legs campus={campus} route={partial} />
+          <ReadAloud campus={campus} route={partial} now={now} ownerKey={`partial:${result.query.from}>${result.query.to}:${partial.pathIds.join('>')}`} />
           <button type="button" className="btn btn-ghost" aria-pressed={shownOption === 'partial'} onClick={() => onToggleOption('partial')}>
             {shownOption === 'partial' ? 'Hide partly blocked option' : 'Show partly blocked option on map'}
           </button>
@@ -324,6 +307,7 @@ export function RouteSummary({
             {option.unverifiedBlocks.length === 1 ? 'block' : 'blocks'}.
           </p>
           <FitBlock fit={option.fit} />
+          <ReadAloud campus={campus} route={option} now={now} ownerKey={`unverified:${result.query.from}>${result.query.to}:${option.pathIds.join('>')}`} />
           <button type="button" className="btn btn-ghost" aria-pressed={shownOption === 'unverified'} onClick={() => onToggleOption('unverified')}>
             {shownOption === 'unverified' ? 'Hide unverified option' : 'Show unverified option on map'}
           </button>

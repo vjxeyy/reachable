@@ -81,6 +81,48 @@ export function SwapIcon({ size = 20 }: IconProps) {
   )
 }
 
+export function MicIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5.5 11.5a6.5 6.5 0 0 0 13 0M12 18v3M8.5 21h7" />
+    </svg>
+  )
+}
+
+export function SpeakerIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" />
+      <path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" />
+    </svg>
+  )
+}
+
+export function PlayIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <path d="M8 5l11 7-11 7z" />
+    </svg>
+  )
+}
+
+export function PauseIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <path d="M8.5 5v14M15.5 5v14" />
+    </svg>
+  )
+}
+
+export function StopIcon({ size = 20 }: IconProps) {
+  return (
+    <svg width={size} height={size} {...base} strokeWidth={2}>
+      <rect x="6" y="6" width="12" height="12" rx="1.5" />
+    </svg>
+  )
+}
+
 function ClockIcon({ size = 14 }: IconProps) {
   return (
     <svg width={size} height={size} {...base}>

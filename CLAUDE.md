@@ -215,3 +215,12 @@ Write each decision down here when it is made, so later phases stay consistent.
     nothing no longer ends the attempt). `max_tokens` is 2000 because the free Gemma and Nemotron models reason first and 300
     was used up before any JSON came out (the live symptom: "the model sent an empty answer"). Total 25 s, 12 s per model; the
     server waits 27 s and the browser 30 s. A 401, 402 or 429 stops at once.
+20. **Voice input and spoken directions** (`src/voice/`, `src/components/VoiceRoute.tsx`, `ReadAloud.tsx`, `StopSelect.tsx`): browser only, using
+    `SpeechRecognition` and `speechSynthesis`, so there is no server part, key or cost. `parseRoute.ts` (turns "from hostel to canteen" into place ids,
+    matching `campus.nodes` by name, never guessing: an unknown or ambiguous place is reported and left empty) and `directions.ts` (the spoken steps)
+    are pure and tested. Speech never changes the route by itself: the person sees the words heard, can edit the two places, and presses "Use these".
+    The directions say "not a verified route" for the partly blocked and unverified options and never call a route accessible. While reading, the steps
+    are also on screen with "Now reading" marked in words, and a change of route stops the reading. The microphone opens only on a button press and stops
+    after 8 s of silence. Without recognition or synthesis the controls are replaced by one line and the route pickers work as before. Verified in the browser pane
+    with a fake recognizer and a spy on `speechSynthesis`; real audio needs a real device. There is no dark mode in the app, so none was added.
+
