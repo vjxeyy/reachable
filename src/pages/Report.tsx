@@ -27,7 +27,7 @@ export function Report() {
   // Roads of the route being looked at on the map, so the likely one is easy to find.
   const { from, to, profiles } = selection
   const routePathIds = useMemo(() => {
-    if (!from || !to) return []
+    if (!from || !to || profiles.length === 0) return []
     const result = findRoute({ campus, reports, confirmations, now }, { from, to, profile: profiles })
     return result.status === 'ok' ? result.route.pathIds : []
   }, [from, to, profiles, reports, confirmations, now])

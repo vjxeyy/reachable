@@ -1,15 +1,17 @@
 import { useEffect, useRef, useState } from 'react'
-import type { Campus } from '../core/types'
+import { PROFILES } from '../core/profiles'
+import type { Campus, ProfileId } from '../core/types'
 import { parseRoute } from '../voice/parseRoute'
 import { canListen, listenOnce, type ListenError } from '../voice/speech'
 import { MicIcon } from './icons'
+import { ProfileChoices } from './ProfileChoices'
 import { StopSelect } from './StopSelect'
 
 type Phase =
   | { name: 'idle' }
   | { name: 'listening' }
   | { name: 'processing' }
-  | { name: 'review'; heard: string; from: string; to: string; problems: string[] }
+  | { name: 'review'; heard: string; from: string; to: string; profiles: ProfileId[]; problems: string[] }
   | { name: 'done'; text: string }
   | { name: 'error'; message: string }
 
@@ -23,21 +25,23 @@ const ERROR_TEXT: Record<ListenError, string> = {
 
 interface Props {
   campus: Campus
-  /** The places now in the route fields, kept when the person names only one of them. */
+  /** What is now in the route fields, kept when the person does not name it. */
   from: string
   to: string
+  profiles: ProfileId[]
   /** Called only when the person presses "Use these". */
-  onApply: (from: string, to: string) => void
+  onApply: (from: string, to: string, profiles: ProfileId[]) => void
 }
 
 const placeName = (campus: Campus, id: string) => campus.nodes.find((n) => n.id === id)?.name ?? id
 
 /**
- * Speak a route: "From hostel to canteen". What was heard is shown in words, the understood places can be
- * changed, and nothing reaches the route fields until the person presses "Use these".
+ * Speak a route and who it is for: "From hostel to canteen for wheelchair and low vision". What was heard is
+ * shown in words, the understood places and profiles can be changed, and nothing reaches the route fields
+ * until the person presses "Use these".
  * Without speech recognition (or without permission) the lists above keep working.
  */
-export function VoiceRoute({ campus, from, to, onApply }: Props) {
+export function VoiceRoute({ campus, from, to, profiles, onApply }: Props) {
   const supported = canListen()
   const [phase, setPhase] = useState<Phase>({ name: 'idle' })
   const cancel = useRef<(() => void) | null>(null)
@@ -64,7 +68,7 @@ export function VoiceRoute({ campus, from, to, onApply }: Props) {
       onText: (text) => {
         answered = true
         const parsed = parseRoute(text, campus)
-        // A place the person did not name ("take me to the library") keeps what is in the route field now.
+        // A place or profile the person did not name ("take me to the library") keeps what is in the panel now.
         // A place they named but that was not understood stays empty, so it is never replaced behind their back.
         const keep = parsed.problems.length === 0
         setPhase({
@@ -72,6 +76,7 @@ export function VoiceRoute({ campus, from, to, onApply }: Props) {
           heard: parsed.heard,
           from: parsed.from || (keep ? from : ''),
           to: parsed.to || (keep ? to : ''),
+          profiles: parsed.profiles.length > 0 ? parsed.profiles : keep ? profiles : [],
           problems: parsed.problems,
         })
       },
@@ -94,11 +99,11 @@ export function VoiceRoute({ campus, from, to, onApply }: Props) {
   const busy = phase.name === 'listening' || phase.name === 'processing'
   const statusText =
     phase.name === 'listening'
-      ? 'Listening. Say, for example, "from Hostel to Canteen".'
+      ? 'Listening. Say, for example, "from Hostel to Canteen for wheelchair".'
       : phase.name === 'processing'
         ? 'Working out what you said.'
         : phase.name === 'review'
-          ? 'Understood. Check the places below, then press Use these.'
+          ? 'Understood. Check the places and profile below, then press Use these.'
           : phase.name === 'done'
             ? phase.text
             : phase.name === 'error'
@@ -117,7 +122,7 @@ export function VoiceRoute({ campus, from, to, onApply }: Props) {
           <MicIcon />
           {busy ? 'Stop listening' : phase.name === 'error' ? 'Try again' : 'Speak a route'}
         </button>
-        <span className="muted small voice-hint">Say "from Hostel to Canteen".</span>
+        <span className="muted small voice-hint">Say "from Hostel to Canteen for wheelchair and low vision".</span>
       </div>
       <p className="voice-status small" role="status">
         {statusText}
@@ -139,15 +144,21 @@ export function VoiceRoute({ campus, from, to, onApply }: Props) {
             <StopSelect label="From" placeholder="Choose start" value={phase.from} campus={campus} onPick={(id) => setPhase({ ...phase, from: id })} />
             <StopSelect label="To" placeholder="Choose destination" value={phase.to} campus={campus} onPick={(id) => setPhase({ ...phase, to: id })} />
           </div>
+          <ProfileChoices profiles={phase.profiles} onChange={(next) => setPhase({ ...phase, profiles: next })} />
           {phase.from !== '' && phase.from === phase.to && <p className="voice-problems small">The start and the destination are the same place.</p>}
+          {(() => {
+            const still = [phase.profiles.length === 0 && 'your profile', phase.from === '' && 'a start', phase.to === '' && 'a destination'].filter(Boolean)
+            return still.length > 0 ? <p className="voice-problems small">Still needed: {still.join(', ')}.</p> : null
+          })()}
           <div className="voice-actions">
             <button
               type="button"
               className="btn"
-              disabled={phase.from === '' || phase.to === '' || phase.from === phase.to}
+              disabled={phase.from === '' || phase.to === '' || phase.from === phase.to || phase.profiles.length === 0}
               onClick={() => {
-                onApply(phase.from, phase.to)
-                setPhase({ name: 'done', text: `Route set from ${placeName(campus, phase.from)} to ${placeName(campus, phase.to)}.` })
+                onApply(phase.from, phase.to, phase.profiles)
+                const who = phase.profiles.map((id) => PROFILES[id].name).join(' and ')
+                setPhase({ name: 'done', text: `Route set from ${placeName(campus, phase.from)} to ${placeName(campus, phase.to)} for ${who}.` })
               }}
             >
               Use these

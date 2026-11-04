@@ -1,9 +1,9 @@
 import { describePath, graphFor } from '../core/graph'
-import { PROFILES } from '../core/profiles'
 import type { RouteFit } from '../core/fit'
 import type { ReportImpact, Route, RouteResult } from '../core/route'
-import { PROFILE_IDS, type Campus, type ProfileId } from '../core/types'
-import { CheckIcon, ProfileIcon, SwapIcon } from './icons'
+import type { Campus, ProfileId } from '../core/types'
+import { SwapIcon } from './icons'
+import { ProfileChoices } from './ProfileChoices'
 import { ReadAloud } from './ReadAloud'
 import { StopSelect } from './StopSelect'
 import { VoiceRoute } from './VoiceRoute'
@@ -17,12 +17,9 @@ interface PanelProps {
   onChange: (patch: { profiles?: ProfileId[]; from?: string; to?: string }) => void
 }
 
-/** Profile, start and destination pickers. */
-const DEFAULT_PROFILES: ProfileId[] = ['wheelchair']
-
-/** Start and destination stacked, then the profile check boxes. */
+/** Profile, start and destination pickers: start and destination stacked, then the profile check boxes. */
 export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps) {
-  const touched = from !== '' || to !== '' || profiles.join() !== DEFAULT_PROFILES.join()
+  const touched = from !== '' || to !== '' || profiles.length > 0
   return (
     <section className="panel route-panel" aria-labelledby="route-heading">
       <h2 id="route-heading">Find a route</h2>
@@ -45,47 +42,15 @@ export function RoutePanel({ campus, profiles, from, to, onChange }: PanelProps)
           <SwapIcon />
         </button>
       </div>
-      <VoiceRoute campus={campus} from={from} to={to} onApply={(f, t) => onChange({ from: f, to: t })} />
-      <fieldset className="profiles">
-        <legend>Profile</legend>
-        {PROFILE_IDS.map((id) => {
-          const checked = profiles.includes(id)
-          const onlyOne = checked && profiles.length === 1
-          return (
-            <label
-              key={id}
-              className={`profile-option${checked ? ' is-active' : ''}`}
-              title={onlyOne ? 'At least one profile must stay ticked' : undefined}
-            >
-              <input
-                type="checkbox"
-                name="profile"
-                value={id}
-                checked={checked}
-                // The last ticked box stays ticked: a route always needs a profile.
-                disabled={onlyOne}
-                onChange={() =>
-                  onChange({
-                    profiles: PROFILE_IDS.filter((p) => (p === id ? !checked : profiles.includes(p))),
-                  })
-                }
-              />
-              <span className="profile-box" aria-hidden="true">
-                {checked && <CheckIcon size={12} />}
-              </span>
-              <ProfileIcon profile={id} />
-              <span>{PROFILES[id].name}</span>
-            </label>
-          )
-        })}
-      </fieldset>
+      <VoiceRoute campus={campus} from={from} to={to} profiles={profiles} onApply={(f, t, p) => onChange({ from: f, to: t, profiles: p })} />
+      <ProfileChoices profiles={profiles} onChange={(next) => onChange({ profiles: next })} />
       <div className="panel-foot">
         <span className="muted small">Tick every profile that applies.</span>
         {touched && (
           <button
             type="button"
             className="link-btn"
-            onClick={() => onChange({ profiles: DEFAULT_PROFILES, from: '', to: '' })}
+            onClick={() => onChange({ profiles: [], from: '', to: '' })}
           >
             Reset
           </button>
@@ -174,9 +139,16 @@ function FitBlock({ fit }: { fit: RouteFit }) {
   )
 }
 
+/** What is still needed before a route can be found. */
+export type Missing = 'profile' | 'start' | 'destination'
+
+const MISSING_TEXT: Record<Missing, string> = { profile: 'your profile', start: 'a start', destination: 'a destination' }
+
 interface SummaryProps {
   campus: Campus
   result: RouteResult | null
+  /** Why there is no result yet, so the empty state can say what to choose. */
+  missing?: Missing[]
   now: number
   activeReportCount: number
   /** Which caution option is drawn on the map, if any. */
@@ -190,6 +162,7 @@ interface SummaryProps {
 export function RouteSummary({
   campus,
   result,
+  missing = [],
   now,
   activeReportCount,
   shownOption,
@@ -199,7 +172,11 @@ export function RouteSummary({
   if (!result) {
     return (
       <section className="panel result result-empty" aria-live="polite">
-        <p>Pick a start and a destination to see a route for your profile.</p>
+        <p>
+          {missing.length > 0
+            ? `Still needed: ${missing.map((m) => MISSING_TEXT[m]).join(', ')}.`
+            : 'Pick a profile, a start and a destination to see a route.'}
+        </p>
       </section>
     )
   }

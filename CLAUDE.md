@@ -223,4 +223,11 @@ Write each decision down here when it is made, so later phases stay consistent.
     are also on screen with "Now reading" marked in words, and a change of route stops the reading. The microphone opens only on a button press and stops
     after 8 s of silence. Without recognition or synthesis the controls are replaced by one line and the route pickers work as before. Verified in the browser pane
     with a fake recognizer and a spy on `speechSynthesis`; real audio needs a real device. There is no dark mode in the app, so none was added.
+21. **No default profile** (`src/state/store.ts` `EMPTY_SELECTION`, `src/components/ProfileChoices.tsx`): the profile list starts empty and any box can be
+    unticked, because a route is only safe for a stated profile. With none ticked the app computes no route and the result panel says "Still needed: your
+    profile, a start, a destination" (`Missing` in `RoutePanel.tsx`); `src/core` is unchanged, `combineProfiles` still throws on an empty list, and the
+    API still requires `profile=`. Voice input (interpretation 20) now also hears the profile: `parseRoute` returns `profiles` (one or several, from words
+    such as "wheelchair", "crutches", "low vision", "visually impaired"; "blind" is read as low vision, the stricter profile, and the review shows what was
+    ticked). The review has the same profile boxes, a profile left out is shown unticked, and "Use these" stays disabled until a start, a destination and at
+    least one profile are set. A profile already ticked in the panel is kept when the person says only places.
 

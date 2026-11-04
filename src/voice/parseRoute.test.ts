@@ -8,7 +8,7 @@ const campus = loadCampus(campusData)
 
 describe('parseRoute: what the person said', () => {
   it('understands "From hostel to canteen"', () => {
-    expect(parseRoute('From hostel to canteen', campus)).toEqual({ heard: 'From hostel to canteen', from: 'hostel', to: 'canteen', problems: [] })
+    expect(parseRoute('From hostel to canteen', campus)).toEqual({ heard: 'From hostel to canteen', from: 'hostel', to: 'canteen', profiles: [], problems: [] })
   })
 
   it('understands the same request in other shapes', () => {
@@ -70,3 +70,53 @@ describe('parseRoute: what the person said', () => {
     expect(parseRoute('from hostle to cantin', campus)).toEqual(parseRoute('from hostle to cantin', campus))
   })
 })
+
+describe('parseRoute: who the route is for', () => {
+  const said = (text: string) => {
+    const p = parseRoute(text, campus)
+    return [p.from, p.to, p.profiles.join('+'), p.problems.length] as const
+  }
+
+  it('hears one profile at the end or the start', () => {
+    expect(said('from hostel to canteen for wheelchair')).toEqual(['hostel', 'canteen', 'wheelchair', 0])
+    expect(said('hostel to canteen with crutches')).toEqual(['hostel', 'canteen', 'crutches', 0])
+    expect(said('wheelchair user from library to hostel')).toEqual(['library', 'hostel', 'wheelchair', 0])
+    expect(said('for low vision take me to the library')).toEqual(['', 'library', 'low_vision', 0])
+  })
+
+  it('hears several profiles, joined by and, plus, also or a pause', () => {
+    expect(said('from hostel to canteen for wheelchair and low vision')[2]).toBe('wheelchair+low_vision')
+    expect(said('from hostel to canteen for crutches plus low vision')[2]).toBe('crutches+low_vision')
+    expect(said('from hostel to canteen, wheelchair, also low vision')[2]).toBe('wheelchair+low_vision')
+    expect(said('from hostel to canteen for crutches, low vision, wheelchair')[2]).toBe('wheelchair+crutches+low_vision')
+  })
+
+  it('keeps the places when the person describes themselves in a sentence', () => {
+    expect(said('i use a wheelchair and i have low vision from library to hostel')).toEqual(['library', 'hostel', 'wheelchair+low_vision', 0])
+    expect(said('from library to hostel, i am visually impaired')).toEqual(['library', 'hostel', 'low_vision', 0])
+  })
+
+  it('reads blind and partially sighted as low vision', () => {
+    expect(said('i am blind take me to the library')).toEqual(['', 'library', 'low_vision', 0])
+    expect(said('from admin to library partially sighted')[2]).toBe('low_vision')
+  })
+
+  it('never leaves a profile word in a place name', () => {
+    const p = parseRoute('from hostel to canteen for wheelchair', campus)
+    expect(p.problems).toEqual([])
+    expect(p.to).toBe('canteen')
+  })
+
+  it('gives no profile when none is said, and the same order every time', () => {
+    expect(parseRoute('from hostel to canteen', campus).profiles).toEqual([])
+    expect(parseRoute('low vision wheelchair from hostel to canteen', campus).profiles).toEqual(['wheelchair', 'low_vision'])
+    expect(parseRoute('wheelchair low vision from hostel to canteen', campus).profiles).toEqual(['wheelchair', 'low_vision'])
+  })
+
+  it('accepts a profile on its own as an answer, without complaining about missing places', () => {
+    const p = parseRoute('wheelchair', campus)
+    expect(p.profiles).toEqual(['wheelchair'])
+    expect(p.problems).toEqual([])
+  })
+})
+

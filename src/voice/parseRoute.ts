@@ -3,7 +3,7 @@
 // It never guesses silently: a place it cannot match, or that fits two places, is reported in `problems`
 // and left empty so the person picks it in the review step.
 
-import type { Campus } from '../core/types'
+import { PROFILE_IDS, type Campus, type ProfileId } from '../core/types'
 
 export interface ParsedRoute {
   /** The text as the browser heard it. */
@@ -11,11 +11,42 @@ export interface ParsedRoute {
   /** Node id, or '' when no place was understood (the same empty value the route pickers use). */
   from: string
   to: string
+  /** The profiles named ("for wheelchair and low vision"), in the app's fixed order. Empty when none was named. */
+  profiles: ProfileId[]
   /** Plain sentences for the person, e.g. 'I did not recognise "cantin" as a place.' */
   problems: string[]
 }
 
 type Match = { id: string } | { problem: string }
+
+/** Ways a profile is said aloud. Longer phrases come first so "wheelchairs" is not cut short. */
+const PROFILE_WORDS: Record<ProfileId, string[]> = {
+  wheelchair: ['wheelchairs', 'wheelchair', 'wheel chair'],
+  crutches: ['crutches', 'crutch'],
+  low_vision: ['low vision', 'visually impaired', 'partially sighted', 'partial sight', 'poor eyesight', 'poor sight', 'blind'],
+}
+
+const LEAD_IN = String.raw`(?:(?:and|plus|also|as well as)\s+)?(?:(?:for|with|using|i use|i am|i m|i have|as)\s+)*(?:(?:a|an|the|my)\s+)?`
+
+/**
+ * Finds the profiles in a sentence and takes them out, with the words that lead into them ("for", "i use a",
+ * "and"), so a place name never sees them. "Blind" is read as Low vision, the closest and stricter profile;
+ * the review shows what was ticked.
+ */
+function takeProfiles(text: string): { text: string; profiles: ProfileId[] } {
+  let rest = text
+  const found = new Set<ProfileId>()
+  for (const id of PROFILE_IDS) {
+    for (const phrase of PROFILE_WORDS[id]) {
+      const pattern = new RegExp(String.raw`${LEAD_IN}\b${phrase}\b(?:\s+(?:users?|person|people))?`, 'g')
+      if (pattern.test(rest)) {
+        found.add(id)
+        rest = rest.replace(pattern, ' ')
+      }
+    }
+  }
+  return { text: rest.replace(/\s+/g, ' ').trim(), profiles: PROFILE_IDS.filter((id) => found.has(id)) }
+}
 
 /** Lowercase, no punctuation, one space between words, spoken "two" or "too" read as "to", US spellings. */
 function normalise(text: string): string {
@@ -117,7 +148,8 @@ function split(text: string): { from: string; to: string } {
 
 export function parseRoute(text: string, campus: Campus): ParsedRoute {
   const heard = text.trim()
-  const parts = split(normalise(text))
+  const taken = takeProfiles(normalise(text))
+  const parts = split(taken.text)
   const problems: string[] = []
   let from = ''
   let to = ''
@@ -132,10 +164,10 @@ export function parseRoute(text: string, campus: Campus): ParsedRoute {
     if ('id' in m) to = m.id
     else problems.push(m.problem)
   }
-  if (!from && !to && problems.length === 0) problems.push('I did not hear a start or a destination. Try "from Hostel to Canteen".')
+  if (!from && !to && problems.length === 0 && taken.profiles.length === 0) problems.push('I did not hear a start or a destination. Try "from Hostel to Canteen".')
   if (from && from === to) {
     problems.push('The start and the destination are the same place.')
     to = ''
   }
-  return { heard, from, to, problems }
+  return { heard, from, to, profiles: taken.profiles, problems }
 }

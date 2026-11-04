@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { CampusMap, type MapMarker } from '../components/CampusMap'
 import { ReportSheet } from '../components/ReportForm'
 import { ReportList } from '../components/ReportList'
-import { RoutePanel, RouteSummary, type OptionKind } from '../components/RoutePanel'
+import { RoutePanel, RouteSummary, type Missing, type OptionKind } from '../components/RoutePanel'
 import { findRoute, type Route } from '../core/route'
 import { isActive } from '../core/trust'
 import type { Report, ReportStatus } from '../core/types'
@@ -33,8 +33,12 @@ export function Home() {
   const [selectedPathId, setSelectedPathId] = useState<string | null>(null)
 
   const result = useMemo(
-    () => (from && to ? findRoute({ campus, reports, confirmations, now }, { from, to, profile: profiles }) : null),
+    () => (from && to && profiles.length > 0 ? findRoute({ campus, reports, confirmations, now }, { from, to, profile: profiles }) : null),
     [reports, confirmations, now, from, to, profiles],
+  )
+  // A route is only safe for a stated profile, so nothing is found until one is ticked.
+  const missing: Missing[] = [profiles.length === 0 && 'profile', !from && 'start', !to && 'destination'].filter(
+    (m): m is Missing => m !== false,
   )
   const activeCount = live.filter((r) => isActive(r.status)).length
   const markers = useMemo(() => markersFor(live), [live])
@@ -75,7 +79,7 @@ export function Home() {
           </div>
           <CampusMap
             campus={campus}
-            profiles={profiles}
+            profiles={profiles.length > 0 ? profiles : undefined}
             route={route}
             caution={drawnOption}
             from={from}
@@ -95,6 +99,7 @@ export function Home() {
         <RouteSummary
           campus={campus}
           result={result}
+          missing={missing}
           now={now}
           activeReportCount={activeCount}
           shownOption={shownOption}

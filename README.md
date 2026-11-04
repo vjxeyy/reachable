@@ -11,6 +11,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Routes by profile, and by combinations of them.** Wheelchair, Crutches or Low vision, each with its own hard
   rules and penalties (steps, width, slope, path length). Tick more than one (for example Wheelchair and Low vision)
   and the route follows the strictest rule of each: every hard rule applies and the penalties add up.
+  No profile is chosen at first: a route is only safe for a stated profile, so nothing is found until one is ticked.
 - **Photo reports.** Tap a road on the map, or open **Report obstacle** (`#/report`) and pick the road from a list,
   which is easier on a phone. Take or upload a photo and the app suggests what the obstacle is. You confirm or correct it.
 - **Verification-aware routing.** New reports are *unverified*: routes avoid them whenever another way exists.
@@ -20,9 +21,10 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Partly blocked option.** If every route is blocked and the person has low vision (which treats any report as a block),
   the app recommends the best way over paths reported as only partly blocked, lists what is in the way, and says whether
   it suits them (slope, width, steps, and "not advised alone" for low vision). It is never presented as a verified route.
-- **Voice input and spoken directions.** In **Find a route**, press **Speak a route** and say "from Hostel to Canteen".
-  The app shows what it heard and the places it understood, you can change them, and nothing is applied until you press
-  **Use these**. On a route result, **Read directions aloud** reads short steps (steps, ramps, slopes, narrow paths and the reports
+- **Voice input and spoken directions.** In **Find a route**, press **Speak a route** and say "from Hostel to Canteen for
+  wheelchair and low vision" (one profile or several, in any order). The app shows what it heard, the places and the profiles
+  it understood, you can change them, and nothing is applied until you press **Use these**. If you leave the profile out, the
+  three profiles show unticked and you tick the ones that apply. On a route result, **Read directions aloud** reads short steps (steps, ramps, slopes, narrow paths and the reports
   on the route) with **Pause**, **Resume** and **Stop**, and lists the same steps on screen while it reads. It uses the browser's own
   speech features: recognition works in Chrome, Edge and Safari (not Firefox) and the browser may send the audio to its speech
   service; reading aloud works in most browsers. Where a feature is missing the app says so and the lists keep working.
@@ -156,7 +158,7 @@ Either way the user always confirms or corrects the category.
 Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. Reset restores the 4 example reports (each is
 tagged **Example**, so nobody mistakes them for real reports), sets the clock back to now and clears the route picker.
 
-1. **Route.** Choose From **Library**, To **Hostel**, with **Wheelchair** ticked.
+1. **Route.** Choose From **Library**, To **Hostel**, and tick **Wheelchair** (no profile is ticked at first).
    A step-free route appears (460 m, via the Canteen and the hostel ramp).
 2. **Report.** Tap the **Canteen to Hostel ramp** on the map. Tap **Upload photo** and pick any picture of a
    blocked ramp (or **Skip the photo and choose the problem myself**). With a photo the app shows an *AI suggestion*

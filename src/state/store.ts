@@ -48,7 +48,7 @@ interface Data {
 }
 
 export interface Selection {
-  /** One or more profiles, never empty. Several combine into the strictest of them. */
+  /** None at first. Several combine into the strictest of them. A route needs at least one. */
   profiles: ProfileId[]
   from: string
   to: string
@@ -74,7 +74,7 @@ export interface StoreState extends Data {
   toast: { id: number; text: string } | null
 }
 
-const EMPTY_SELECTION: Selection = { profiles: ['wheelchair'], from: '', to: '' }
+export const EMPTY_SELECTION: Selection = { profiles: [], from: '', to: '' }
 
 function readStorage(key: string): string | null {
   try {
