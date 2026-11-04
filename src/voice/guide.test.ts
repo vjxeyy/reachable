@@ -47,11 +47,11 @@ function blockedReport(pathId: string): Report {
 }
 
 describe('the conversation', () => {
-  it('starts by saying why the microphone is needed, then asks for the start', () => {
+  it('starts with a short welcome, then asks for the start', () => {
     const turn = begin(ctx)
     expect(turn.state.phase).toBe('ask_start')
     expect(turn.listen).toBe('question')
-    expect(spoken(turn)).toMatch(/microphone only to hear your answers/)
+    expect(spoken(turn)).not.toMatch(/microphone/)
     expect(turn.say[turn.say.length - 1]).toMatch(/starting place/)
   })
 

@@ -110,12 +110,11 @@ function turn(state: GuideState, say: string[], listen: Listen, extra: Partial<T
 
 // ---------- Starting ----------
 
-/** The first turn: why the microphone is needed, then the first question. */
+/** The first turn: a short welcome, then the first question. */
 export function begin(ctx: GuideContext): Turn {
   void ctx
   return turn({ ...FRESH }, [
     'Welcome to the REACHABLE voice guide.',
-    'I will use your microphone only to hear your answers. Please choose Allow if your browser asks.',
     'You can say help at any time, or return to map to leave.',
     ASK_START,
   ], 'question')
