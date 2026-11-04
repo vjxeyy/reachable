@@ -140,7 +140,17 @@ export function createOpenRouterClassifier(options: OpenRouterOptions): Classifi
 
     if (response.status === 401 || response.status === 403) throw new FatalError('the OpenRouter key was rejected')
     if (response.status === 402) throw new FatalError('the OpenRouter account has no credit')
-    if (response.status === 429) throw new FatalError('rate limited (free models allow about 50 photos a day)')
+    if (response.status === 429) {
+      // A model busy upstream also answers 429, and the next free model may be fine. Only the account's
+      // daily allowance ends the attempt for every model.
+      const detail = await response
+        .json()
+        .then((b) => String((b as { error?: { message?: string } } | null)?.error?.message ?? '').slice(0, 120))
+        .catch(() => '')
+      const message = `rate limited${detail ? ` (${detail})` : ' (free models allow about 50 photos a day)'}`
+      if (/per.?day|daily/i.test(detail)) throw new FatalError(message)
+      throw new Error(message)
+    }
     if (!response.ok) throw new Error(`OpenRouter error ${response.status}`)
 
     const body = (await response.json().catch(() => null)) as {

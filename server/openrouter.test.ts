@@ -95,9 +95,20 @@ describe('OpenRouter classifier', () => {
   })
 
   it('stops at once on a rejected key or the daily limit instead of trying more models', async () => {
-    replies = [{ status: 429, json: {} }, completion(JSON.stringify(SCORES))]
-    await expect(make({ models: ['a:free', 'b:free'] }).classify(input)).rejects.toThrow(/rate limited/)
+    replies = [{ status: 429, json: { error: { message: 'Rate limit exceeded: free-models-per-day' } } }, completion(JSON.stringify(SCORES))]
+    await expect(make({ models: ['a:free', 'b:free'] }).classify(input)).rejects.toThrow(/rate limited \(Rate limit exceeded: free-models-per-day\)/)
     expect(requests).toHaveLength(1)
+    replies = [{ status: 401, json: {} }, completion(JSON.stringify(SCORES))]
+    requests = []
+    await expect(make({ models: ['a:free', 'b:free'] }).classify(input)).rejects.toThrow(/key was rejected/)
+    expect(requests).toHaveLength(1)
+  })
+
+  it('tries the next model when one is busy upstream (a 429 that is not the daily limit)', async () => {
+    replies = [{ status: 429, json: { error: { message: 'a:free is temporarily rate-limited upstream' } } }, completion(JSON.stringify(SCORES), 'b:free')]
+    const result = await make({ models: ['a:free', 'b:free'] }).classify(input)
+    expect(requests).toHaveLength(2)
+    expect(result.model).toBe('b:free')
   })
 
   it('says what every model did when none gives a usable answer', async () => {
@@ -120,7 +131,7 @@ describe('OpenRouter classifier', () => {
   it.each([
     ['a rejected key', { status: 401, json: { error: { message: 'No auth' } } }, /key was rejected/],
     ['no credit', { status: 402, json: { error: { message: 'x' } } }, /no credit/],
-    ['the daily free limit', { status: 429, json: { error: { message: 'x' } } }, /rate limited/],
+    ['a rate limit', { status: 429, json: { error: { message: 'x' } } }, /rate limited \(x\)/],
     ['a server error', { status: 500, json: {} }, /OpenRouter error 500/],
     ['an error object in a 200', { json: { error: { message: 'Provider returned error' } } }, /Provider returned error/],
     ['an empty answer', completion('   '), /empty answer/],
@@ -136,7 +147,7 @@ describe('OpenRouter classifier', () => {
     reply = { status: 429, json: {} }
     const limited = await withFallback(make(), simulatedClassifier, { timeoutMs: 5000, failurePrefix: 'OpenRouter unavailable' }).classify(input)
     expect(limited.source).toBe('simulated')
-    expect(limited.note).toMatch(/OpenRouter unavailable \(rate limited/)
+    expect(limited.note).toMatch(/OpenRouter unavailable \(.*rate limited/)
 
     reply = { ...completion(JSON.stringify(SCORES)), delayMs: 1500 }
     const slow = await withFallback(make({ timeoutMs: 200 }), simulatedClassifier, { timeoutMs: 5000 }).classify(input)
