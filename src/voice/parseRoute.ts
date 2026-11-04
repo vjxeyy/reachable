@@ -81,12 +81,14 @@ function distance(a: string, b: string): number {
   return row[b.length]
 }
 
-/** Two words count as the same when equal, one starts the other (hall, halls), or they differ by a mis-hearing. */
+/** Two words are the same when equal or one starts the other (hall, halls). */
 function sameWord(heard: string, name: string): boolean {
-  if (heard === name) return true
-  if (heard.length >= 3 && (name.startsWith(heard) || heard.startsWith(name))) return true
-  if (heard.length >= 4 && name.length >= 4) return distance(heard, name) <= Math.floor(Math.min(heard.length, name.length) / 3)
-  return false
+  return heard === name || (heard.length >= 3 && (name.startsWith(heard) || heard.startsWith(name)))
+}
+
+/** Or, as a second chance, when they differ by a mis-hearing ("hostle" for hostel). */
+function closeWord(heard: string, name: string): boolean {
+  return sameWord(heard, name) || (heard.length >= 4 && name.length >= 4 && distance(heard, name) <= Math.floor(Math.min(heard.length, name.length) / 3))
 }
 
 function nameList(names: string[]): string {
@@ -107,14 +109,17 @@ function matchPlace(phrase: string, campus: Campus): Match {
     if (best.length === 1) return { id: best[0].id }
   }
 
-  // 2. Every spoken word is the same as, or starts, a word of the name ("admin", "hall", "lab").
+  // 2. Every spoken word is the same as, or starts, a word of the name ("admin", "hall", "lab"). Words that
+  //    match exactly are tried before words that only sound close, so "central" is Central Quad, not Health Centre.
   const words = heard.split(' ')
-  const byWords = places.filter((p) => {
-    const nameWords = p.key.split(' ')
-    return words.every((w) => nameWords.some((nw) => sameWord(w, nw)))
-  })
-  if (byWords.length === 1) return { id: byWords[0].id }
-  if (byWords.length > 1) return { problem: `"${heard}" could be ${nameList(byWords.map((p) => p.name))}.` }
+  for (const matches of [sameWord, closeWord]) {
+    const byWords = places.filter((p) => {
+      const nameWords = p.key.split(' ')
+      return words.every((w) => nameWords.some((nw) => matches(w, nw)))
+    })
+    if (byWords.length === 1) return { id: byWords[0].id }
+    if (byWords.length > 1) return { problem: `"${heard}" could be ${nameList(byWords.map((p) => p.name))}.` }
+  }
 
   // 3. A close mis-hearing of the whole name ("cantin" for Canteen).
   if (heard.length >= 4) {

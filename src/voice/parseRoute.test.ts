@@ -120,3 +120,10 @@ describe('parseRoute: who the route is for', () => {
   })
 })
 
+
+describe('parseRoute: an exact word beats a close sound', () => {
+  it('"central" is Central Quad, and "centre" is Health Centre', () => {
+    expect(parseRoute('go to central', campus)).toMatchObject({ to: 'quad', problems: [] })
+    expect(parseRoute('go to the centre', campus)).toMatchObject({ to: 'health', problems: [] })
+  })
+})
