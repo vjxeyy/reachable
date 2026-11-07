@@ -486,7 +486,7 @@ describe('partly blocked option when everything is blocked', () => {
     const result = route('gate', 'health', 'wheelchair', [report({ pathId: HEALTH_RAMP })])
     if (result.status !== 'no_verified_route' || !result.alternative) throw new Error('unreachable')
     expect(result.alternative.fit.verdict).toBe('caution')
-    expect(result.alternative.fit.notes.some((n) => /not yet confirmed/.test(n.text))).toBe(true)
+    expect(result.alternative.fit.notes.some((n) => /not yet verified/.test(n.text))).toBe(true)
   })
 
   it('gives the same answer every time', () => {

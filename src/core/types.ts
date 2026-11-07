@@ -15,7 +15,7 @@ export const SEVERITIES = ['blocked', 'partial'] as const
 /** `blocked` = fully impassable, `partial` = passable with difficulty. */
 export type Severity = (typeof SEVERITIES)[number]
 
-/** Always derived from the report, its confirmations and the current time (see trust.ts). */
+/** Always derived from the report, its admin verify, its clear votes and the current time (see trust.ts). */
 export type ReportStatus = 'verified' | 'unverified' | 'outdated' | 'cleared'
 
 /** Only "cleared" exists: visitors cannot confirm a report, and old "still there" rows are ignored. */
@@ -77,7 +77,7 @@ export interface Report {
   aiCategory: Category | null
   photoUrl: string | null
   description: string
-  /** Anonymous id of the device that filed the report. It cannot confirm its own report. */
+  /** Anonymous id of the device that filed the report. */
   reporterId: string
   createdAt: Timestamp
   lastConfirmedAt: Timestamp
@@ -89,7 +89,7 @@ export interface Report {
 export interface Confirmation {
   reportId: string
   areaId: string
-  /** Anonymous device id. One vote per device per report keeps confirmations independent. */
+  /** Anonymous device id of whoever cleared the report (only the admin can on the shared server). */
   voterId: string
   vote: Vote
   at: Timestamp

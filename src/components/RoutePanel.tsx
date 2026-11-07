@@ -154,7 +154,7 @@ interface SummaryProps {
   /** Which caution option is drawn on the map, if any. */
   shownOption: OptionKind | null
   onToggleOption: (kind: OptionKind) => void
-  /** Opens a path's reports, e.g. to confirm or clear a block. */
+  /** Opens a path's reports, e.g. to see or clear a block. */
   onSelectPath?: (pathId: string) => void
 }
 

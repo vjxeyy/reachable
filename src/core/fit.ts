@@ -66,7 +66,7 @@ export function assessRoute(campus: Campus, legs: readonly Leg[], profile: Profi
       if (impact.effect === 'outdated') {
         add('info', 'an old report here may be out of date, but check on site.')
       } else if (impact.effect === 'unverified_block') {
-        add('warn', 'reported as fully blocked and not yet confirmed. It may be impassable, so check before you go.')
+        add('warn', 'reported as fully blocked and not yet verified by the admin. It may be impassable, so check before you go.')
       } else if (impact.effect === 'partial') {
         if (profile.activeObstacleBlocks) {
           notAdvised = true

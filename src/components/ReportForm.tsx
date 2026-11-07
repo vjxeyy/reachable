@@ -257,7 +257,7 @@ export function ReportForm({ campus, pathId, firstStep = 1, onSubmitted }: FormP
 
       <p className="muted small">
         New reports start as <strong>unverified</strong>. Routes avoid them whenever another way exists. They block a
-        route outright only after 2 more people confirm them or an admin verifies them.
+        route outright only after the admin verifies them.
       </p>
       {saveError && <p className="error">{saveError}</p>}
       {!canSubmit && !saving && analysis.state !== 'working' && (

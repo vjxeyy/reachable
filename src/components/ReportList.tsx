@@ -14,7 +14,7 @@ interface Props {
   emptyText: string
   showPath?: boolean
   onSelectPath?: (pathId: string) => void
-  /** Extra controls under each report (confirm, clear, verify...). */
+  /** Extra controls under each report (clear, verify...). */
   renderActions?: (report: Report) => ReactNode
   /** Replaces the plain status pill, e.g. with a TrustBadge. */
   renderStatus?: (report: Report) => ReactNode
