@@ -96,8 +96,8 @@ export function Report() {
           <h2 id="feed-heading">Recent reports</h2>
           <p className="muted small">
             {source === 'api' && !auth.user
-              ? 'Confirm a report that is still there. Only the admin can mark one cleared.'
-              : 'Confirm a report that is still there, or mark it cleared once the way is open.'}
+              ? 'Anyone can report an obstacle. Only the admin can verify a report or mark it cleared.'
+              : 'Mark a report cleared once the way is open, or verify it on the Dashboard.'}
           </p>
           <ReportList
             campus={campus}

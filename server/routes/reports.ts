@@ -1,4 +1,4 @@
-// Report endpoints: list, create (with photo upload), confirm, clear, admin verify and resolve.
+// Report endpoints: list, create (with photo upload), clear, admin verify and resolve. Visitors can only file a report.
 
 import { Router, type Request } from 'express'
 import multer from 'multer'
@@ -6,8 +6,8 @@ import { randomUUID } from 'node:crypto'
 import { writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { graphFor } from '../../src/core/graph'
-import { ADMIN_ONLY_CLEAR, voteBlockReason, withDerivedStatus } from '../../src/core/trust'
-import { CATEGORIES, SEVERITIES, type Category, type Report, type Severity, type Vote } from '../../src/core/types'
+import { ADMIN_ONLY_CLEAR, clearBlockReason, withDerivedStatus } from '../../src/core/trust'
+import { CATEGORIES, SEVERITIES, type Category, type Report, type Severity } from '../../src/core/types'
 import {
   getReport,
   insertConfirmation,
@@ -116,23 +116,20 @@ export function reportsRouter(ctx: ServerContext): Router {
     res.status(201).json({ report: withDerivedStatus([report], [], at)[0] })
   })
 
-  const vote = (kind: Vote) =>
-    router.post(`/reports/:id/${kind === 'still_there' ? 'confirm' : 'clear'}`, (req, res) => {
-      const report = findReport(ctx, req)
-      const voterId = requireString((req.body as Record<string, unknown> | undefined)?.voterId, 'voterId', 80)
-      const at = timeFrom(req)
-      const isAdmin = ctx.auth.sessionFrom(req) !== null
-      const blocked = voteBlockReason(report, listConfirmations(db, campus.areaId), voterId, kind, at, isAdmin)
-      if (blocked) throw new HttpError(blocked === ADMIN_ONLY_CLEAR ? 403 : 409, blocked)
-      db.transaction(() => {
-        insertConfirmation(db, { reportId: report.id, areaId: report.areaId, voterId, vote: kind, at })
-        if (kind === 'cleared') updateReportTimes(db, report.id, { clearedAt: at })
-        else updateReportTimes(db, report.id, { lastConfirmedAt: Math.max(report.lastConfirmedAt, at) })
-      })()
-      res.json(snapshot(db, campus.areaId, at))
-    })
-  vote('still_there')
-  vote('cleared')
+  // Only the admin can clear a report. Visitors can only file one: there is no "still there" or confirm step.
+  router.post('/reports/:id/clear', (req, res) => {
+    const report = findReport(ctx, req)
+    const voterId = requireString((req.body as Record<string, unknown> | undefined)?.voterId, 'voterId', 80)
+    const at = timeFrom(req)
+    const isAdmin = ctx.auth.sessionFrom(req) !== null
+    const blocked = clearBlockReason(report, listConfirmations(db, campus.areaId), isAdmin)
+    if (blocked) throw new HttpError(blocked === ADMIN_ONLY_CLEAR ? 403 : 409, blocked)
+    db.transaction(() => {
+      insertConfirmation(db, { reportId: report.id, areaId: report.areaId, voterId, vote: 'cleared', at })
+      updateReportTimes(db, report.id, { clearedAt: at })
+    })()
+    res.json(snapshot(db, campus.areaId, at))
+  })
 
   // Admin actions: only the signed-in owner (see server/auth.ts).
   const owner = requireOwner(ctx)

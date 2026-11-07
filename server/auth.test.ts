@@ -189,14 +189,14 @@ describe('clearing reports', () => {
   it('keeps clearing for the admin, for unverified, outdated and verified reports alike', async () => {
     const cookie = await owner()
     await call('POST', '/api/demo/reset', {}, cookie)
-    // seed-kerb is unverified, seed-flooding was verified by an admin, seed-raised-slabs by two confirmations.
+    // seed-kerb is unverified; seed-flooding and seed-raised-slabs were verified by an admin.
     for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) {
       const refused = await clear(id)
       expect(refused.status).toBe(403)
       expect(JSON.stringify(refused.data)).toMatch(/Only the admin/)
     }
-    // Still there is open to everyone.
-    expect((await call('POST', '/api/reports/seed-flooding/confirm', { voterId: 'a-passer-by' })).status).toBe(200)
+    // There is no "still there" step any more: nobody can confirm a report.
+    expect((await call('POST', '/api/reports/seed-flooding/confirm', { voterId: 'a-passer-by' })).status).toBe(404)
     // The signed-in admin can clear them.
     for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) expect((await clear(id, cookie)).status).toBe(200)
   })

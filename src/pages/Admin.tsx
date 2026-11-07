@@ -77,7 +77,7 @@ function Dashboard({ shared, canAct }: { shared: boolean; canAct: boolean }) {
         <Stat label="Affected paths" value={affectedPaths} hint={`of ${campus.paths.length} paths`} />
         <Stat label="Hard-blocked paths" value={hardBlocked} hint="verified blocks" tone="verified" />
         <Stat label="Needs review" value={count('unverified')} hint="unverified reports" tone="unverified" />
-        <Stat label="Outdated" value={count('outdated')} hint="no recent confirmation" tone="outdated" />
+        <Stat label="Outdated" value={count('outdated')} hint="not re-verified in time" tone="outdated" />
       </section>
 
       <section className="panel">

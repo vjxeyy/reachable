@@ -189,7 +189,7 @@ function impactsFor(input: RouteInput, profile: Profile): ImpactMap {
       status,
       ...impact,
       createdAt: report.createdAt,
-      lastConfirmedAt: lastConfirmedAt(report, input.confirmations),
+      lastConfirmedAt: lastConfirmedAt(report),
     })
     impacts.set(report.pathId, list)
   }

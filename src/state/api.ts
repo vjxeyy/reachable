@@ -1,7 +1,7 @@
 // Thin client for the REACHABLE API (server/). The store decides when to use it.
 
 import type { ClassifierResult } from '../classifier'
-import type { Confirmation, Report, Vote } from '../core/types'
+import type { Confirmation, Report } from '../core/types'
 
 /** API origin. Empty means same origin (Vite proxies /api in dev; `npm start` serves both). */
 const BASE = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')
@@ -81,9 +81,8 @@ export function apiCreateReport(body: CreateReportBody, photo: Blob | null): Pro
   return request('POST', '/api/reports', form, 20000)
 }
 
-export function apiVote(reportId: string, vote: Vote, voterId: string, at: number): Promise<Snapshot> {
-  const action = vote === 'cleared' ? 'clear' : 'confirm'
-  return request('POST', `/api/reports/${encodeURIComponent(reportId)}/${action}`, { voterId, at })
+export function apiClear(reportId: string, voterId: string, at: number): Promise<Snapshot> {
+  return request('POST', `/api/reports/${encodeURIComponent(reportId)}/clear`, { voterId, at })
 }
 
 export function apiAdmin(reportId: string, action: 'verify' | 'resolve', at: number): Promise<Snapshot> {

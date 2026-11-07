@@ -16,7 +16,6 @@ export interface SeedReport {
   description: string
   reportedMinutesAgo: number
   adminVerifiedMinutesAgo?: number
-  stillThere?: { voterId: string; minutesAgo: number }[]
 }
 
 export interface SeedFile {
@@ -24,7 +23,7 @@ export interface SeedFile {
   reports: SeedReport[]
 }
 
-/** The seeds' reporter. Distinct from every real device, so a visitor can confirm a seeded report. */
+/** The seeds' reporter. Distinct from every real device. */
 export const SEED_REPORTER = 'seed-device-1'
 
 export function buildSeed(seed: SeedFile, now: Timestamp): { reports: Report[]; confirmations: Confirmation[] } {
@@ -34,9 +33,6 @@ export function buildSeed(seed: SeedFile, now: Timestamp): { reports: Report[]; 
     if (!(CATEGORIES as readonly string[]).includes(s.category)) throw new Error(`Seed ${s.id}: bad category`)
     if (!(SEVERITIES as readonly string[]).includes(s.severity)) throw new Error(`Seed ${s.id}: bad severity`)
     const createdAt = now - s.reportedMinutesAgo * MINUTE
-    const votes = (s.stillThere ?? []).map(
-      (v): Confirmation => ({ reportId: s.id, areaId: seed.areaId, voterId: v.voterId, vote: 'still_there', at: now - v.minutesAgo * MINUTE }),
-    )
     const adminVerifiedAt = s.adminVerifiedMinutesAgo === undefined ? null : now - s.adminVerifiedMinutesAgo * MINUTE
     reports.push({
       id: s.id,
@@ -51,11 +47,10 @@ export function buildSeed(seed: SeedFile, now: Timestamp): { reports: Report[]; 
       description: s.description,
       reporterId: SEED_REPORTER,
       createdAt,
-      lastConfirmedAt: Math.max(createdAt, adminVerifiedAt ?? 0, ...votes.map((v) => v.at)),
+      lastConfirmedAt: Math.max(createdAt, adminVerifiedAt ?? 0),
       clearedAt: null,
       adminVerifiedAt,
     })
-    confirmations.push(...votes)
   }
   return { reports, confirmations }
 }

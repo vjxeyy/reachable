@@ -1,12 +1,4 @@
-import {
-  clearedAt,
-  combinedConfidence,
-  confirmationCount,
-  CONFIRMATIONS_TO_VERIFY,
-  DECAY_MS,
-  lastConfirmedAt,
-  timeUntilOutdatedMs,
-} from '../core/trust'
+import { clearedAt, combinedConfidence, DECAY_MS, lastConfirmedAt, timeUntilOutdatedMs } from '../core/trust'
 import type { Confirmation, Report } from '../core/types'
 import { StatusIcon } from './icons'
 import { CATEGORY_LABEL, formatAgo, formatDuration, STATUS_LABEL } from './labels'
@@ -20,22 +12,21 @@ interface Props {
 
 /** Status, age and trust details for one report. Never shows a status without its age. */
 export function TrustBadge({ report, confirmations, now }: Props) {
-  const count = confirmationCount(report, confirmations)
-  const seen = lastConfirmedAt(report, confirmations)
+  const seen = lastConfirmedAt(report)
   const cleared = clearedAt(report, confirmations)
-  const confidence = Math.round(combinedConfidence(report, confirmations) * 100)
+  const confidence = Math.round(combinedConfidence(report) * 100)
 
   let detail: string
   if (report.status === 'cleared') {
     detail = `cleared ${formatAgo(now - (cleared ?? now))}`
   } else if (report.status === 'outdated') {
-    detail = `not confirmed for ${formatDuration(now - seen)}. ${CATEGORY_LABEL[report.category]} reports expire after ${formatDuration(
+    detail = `not re-verified for ${formatDuration(now - seen)}. ${CATEGORY_LABEL[report.category]} reports expire after ${formatDuration(
       DECAY_MS[report.category],
     )}, so it no longer blocks routes`
   } else if (report.status === 'verified') {
-    detail = report.adminVerifiedAt !== null ? 'verified by an admin' : `${count} independent confirmations`
+    detail = 'verified by the admin'
   } else {
-    detail = `${count} of ${CONFIRMATIONS_TO_VERIFY} confirmations needed`
+    detail = 'waiting for the admin to verify'
   }
 
   const active = report.status === 'verified' || report.status === 'unverified'
@@ -47,8 +38,8 @@ export function TrustBadge({ report, confirmations, now }: Props) {
       <span className="trust-detail">{detail}</span>
       <span className="trust-meta muted">
         Reported {formatAgo(now - report.createdAt)}
-        {seen > report.createdAt && report.status !== 'cleared' && ` · last confirmed ${formatAgo(now - seen)}`}
-        {active && ` · outdated in ${formatDuration(timeUntilOutdatedMs(report, confirmations, now))}`}
+        {seen > report.createdAt && report.status !== 'cleared' && ` · last verified ${formatAgo(now - seen)}`}
+        {active && ` · outdated in ${formatDuration(timeUntilOutdatedMs(report, now))}`}
         {active && ` · ${confidence}% confidence`}
       </span>
     </div>

@@ -84,7 +84,7 @@ reachable/
 **Node**: `id, name, x, y, areaId`
 **Path**: `id, from, to, lengthM, stepFree, widthM, slopePct, areaId`
 **Report**: `id, pathId, category, severity, status, confidence, photoUrl, description, createdAt, lastConfirmedAt, clearedAt`
-**Confirmation**: `reportId, vote (still_there | cleared), at`
+**Confirmation**: `reportId, vote (cleared), at`
 
 Categories: `blocked_ramp, parked_vehicle, flooding, broken_pavement, missing_kerb_cut, other`
 Severity: `blocked` (fully impassable) or `partial`
@@ -114,8 +114,8 @@ Cost of a path for a profile:
 - `cleared`: no effect
 
 **Trust and freshness**
-- Confidence = AI confidence (0 to 1) combined with number of confirmations. Two or more independent confirmations, or an admin verify, makes a report `verified`.
-- Freshness decay by category (a report becomes `outdated` after this time without a new confirmation): parked vehicle 3 hours, flooding 12 hours, blocked ramp 3 days, broken pavement 30 days, missing kerb cut 90 days, other 3 days.
+- Confidence = the AI confidence (0 to 1), and 1 after an admin verify. Only an admin verify makes a report `verified`; visitors can only report an obstacle (changed after the first build, see CLAUDE.md Interpretation 23).
+- Freshness decay by category (a report becomes `outdated` after this time without an admin verify): parked vehicle 3 hours, flooding 12 hours, blocked ramp 3 days, broken pavement 30 days, missing kerb cut 90 days, other 3 days.
 
 **Fail-safe**
 If no path remains after hard exclusions and `verified` blocks, return `{ status: "no_verified_route" }` plus the best unverified option labelled "Unverified, use with caution". Never present an uncertain path as accessible.
@@ -206,7 +206,7 @@ Work one phase at a time. Start each Claude Code session with: "Read CLAUDE.md a
 | Real classifier is inaccurate or down | Simulated classifier plus user confirmation (already built) |
 | Backend takes too long | Ship Phase 5 with `localStorage`, say shared data is next |
 | Demo data looks empty | Pre-seeded reports and Reset demo button |
-| Judge asks about fake reports | Unverified reports only add a penalty; blocking needs 2 confirmations or admin verify |
+| Judge asks about fake reports | Unverified reports only add a penalty; blocking needs an admin verify |
 | Judge asks "how is this different from StreetCo or Route4U?" | Verification-aware routing, fail-safe "no verified route", freshness by category, facilities dashboard |
 
 ## 11. Suggested timeline

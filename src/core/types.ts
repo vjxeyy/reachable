@@ -18,7 +18,8 @@ export type Severity = (typeof SEVERITIES)[number]
 /** Always derived from the report, its confirmations and the current time (see trust.ts). */
 export type ReportStatus = 'verified' | 'unverified' | 'outdated' | 'cleared'
 
-export type Vote = 'still_there' | 'cleared'
+/** Only "cleared" exists: visitors cannot confirm a report, and old "still there" rows are ignored. */
+export type Vote = 'cleared'
 
 export const PROFILE_IDS = ['wheelchair', 'crutches', 'low_vision'] as const
 export type ProfileId = (typeof PROFILE_IDS)[number]

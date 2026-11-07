@@ -7,8 +7,8 @@ import seedData from '../../data/seed-reports.json'
 import { setRemoteClassifier, type Classifier } from '../classifier'
 import { loadCampus } from '../core/graph'
 import { buildSeed, type SeedFile } from '../core/seed'
-import { voteBlockReason } from '../core/trust'
-import type { Category, Confirmation, ProfileId, Report, Severity, Vote } from '../core/types'
+import { clearBlockReason } from '../core/trust'
+import type { Category, Confirmation, ProfileId, Report, Severity } from '../core/types'
 import {
   apiAdmin,
   apiAuthConfig,
@@ -20,7 +20,7 @@ import {
   apiMe,
   apiResetDemo,
   apiSnapshot,
-  apiVote,
+  apiClear,
   isUnreachable,
   type AuthConfig,
   type AuthUser,
@@ -106,7 +106,7 @@ function loadClientId(): string {
   return id
 }
 
-/** Anonymous id for this browser. Lets the trust rules count independent confirmations. */
+/** Anonymous id for this browser. Marks which reports it filed. */
 export const clientId = loadClientId()
 
 function loadOffset(): number {
@@ -370,10 +370,9 @@ export function startSync(): () => void {
 
 // ---------- Pure data updates (used offline and for instant feedback online) ----------
 
-function withVote(data: Data, report: Report, vote: Vote, at: number): Data {
-  const confirmation: Confirmation = { reportId: report.id, areaId: report.areaId, voterId: clientId, vote, at }
-  const updated: Report =
-    vote === 'cleared' ? { ...report, clearedAt: at } : { ...report, lastConfirmedAt: Math.max(report.lastConfirmedAt, at) }
+function withCleared(data: Data, report: Report, at: number): Data {
+  const confirmation: Confirmation = { reportId: report.id, areaId: report.areaId, voterId: clientId, vote: 'cleared', at }
+  const updated: Report = { ...report, clearedAt: at }
   return {
     confirmations: [...data.confirmations, confirmation],
     reports: data.reports.map((r) => (r.id === report.id ? updated : r)),
@@ -491,23 +490,23 @@ export async function addReport(input: NewReport): Promise<{ report: Report } | 
   }
 }
 
-/** Why this browser cannot cast the vote now, or null. */
-export function voteBlocked(report: Report, vote: Vote): string | null {
+/** Why this browser cannot clear the report now, or null. */
+export function clearBlocked(report: Report): string | null {
   // With no server the reports are this browser's own, so there is nobody to protect them from.
   const isAdmin = state.source !== 'api' || state.auth.user !== null
-  return voteBlockReason(report, state.confirmations, clientId, vote, now(), isAdmin)
+  return clearBlockReason(report, state.confirmations, isAdmin)
 }
 
-/** "Still there" or "Cleared" from this browser. A cleared vote restores routes at once. */
-export async function castVote(reportId: string, vote: Vote): Promise<string | null> {
+/** "Cleared" from this browser (the admin on the shared server). Restores routes at once. */
+export async function clearReport(reportId: string): Promise<string | null> {
   const report = state.reports.find((r) => r.id === reportId)
   if (!report) return 'Report not found.'
-  const blocked = voteBlocked(report, vote)
+  const blocked = clearBlocked(report)
   if (blocked) return blocked
   const at = now()
   return write(
-    (data) => withVote(data, data.reports.find((r) => r.id === reportId) ?? report, vote, at),
-    () => apiVote(reportId, vote, clientId, at),
+    (data) => withCleared(data, data.reports.find((r) => r.id === reportId) ?? report, at),
+    () => apiClear(reportId, clientId, at),
   )
 }
 

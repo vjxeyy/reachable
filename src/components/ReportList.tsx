@@ -70,42 +70,24 @@ export function ReportList({ campus, reports, now, emptyText, showPath = true, o
   )
 }
 
-interface VoteProps {
+interface ClearProps {
   report: Report
-  /** Returns why the vote is not allowed, or null. */
-  blockedReason: (vote: 'still_there' | 'cleared') => string | null
-  onVote: (vote: 'still_there' | 'cleared') => void
+  /** Returns why this browser may not clear the report, or null. */
+  blockedReason: () => string | null
+  onClear: () => void
 }
 
-/** "Still there" and "Cleared" buttons. Disabled buttons say why. */
-export function VoteButtons({ report, blockedReason, onVote }: VoteProps) {
+/**
+ * The admin's "Cleared" button. Visitors can only report an obstacle, so they get no buttons under a report at all:
+ * there is no "still there" step, and only the admin can verify or clear.
+ */
+export function ClearButton({ report, blockedReason, onClear }: ClearProps) {
   if (report.status === 'cleared') return null
-  const stillReason = blockedReason('still_there')
-  const clearReason = blockedReason('cleared')
+  const reason = blockedReason()
+  if (reason === ADMIN_ONLY_CLEAR) return null
   return (
-    <>
-      <button
-        type="button"
-        className="btn btn-quiet btn-small"
-        disabled={stillReason !== null}
-        title={stillReason ?? 'Confirm the obstacle is still there'}
-        onClick={() => onVote('still_there')}
-      >
-        Still there
-      </button>
-      {/* Only the admin can clear a report, so everyone else does not get the button at all. */}
-      {clearReason !== ADMIN_ONLY_CLEAR && (
-        <button
-          type="button"
-          className="btn btn-good btn-small"
-          disabled={clearReason !== null}
-          title={clearReason ?? 'Mark the obstacle as gone'}
-          onClick={() => onVote('cleared')}
-        >
-          Cleared
-        </button>
-      )}
-      {stillReason && <span className="muted small vote-note">{stillReason}</span>}
-    </>
+    <button type="button" className="btn btn-good btn-small" disabled={reason !== null} title={reason ?? 'Mark the obstacle as gone'} onClick={onClear}>
+      Cleared
+    </button>
   )
 }

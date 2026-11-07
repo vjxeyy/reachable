@@ -15,7 +15,7 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
 - **Photo reports.** Tap a road on the map, or open **Report obstacle** (`#/report`) and pick the road from a list,
   which is easier on a phone. Take or upload a photo and the app suggests what the obstacle is. You confirm or correct it.
 - **Verification-aware routing.** New reports are *unverified*: routes avoid them whenever another way exists.
-  A report blocks a path outright only after 2 independent confirmations or an admin verify.
+  A report blocks a path outright only after the admin verifies it. Visitors can only report an obstacle.
 - **Fail-safe.** If every path is blocked, the app says **"No verified step-free route"** instead of drawing a
   risky one. The best unverified option is available on request, labelled *"Unverified, use with caution"*.
 - **Partly blocked option.** If every route is blocked and the person has low vision (which treats any report as a block),
@@ -36,10 +36,10 @@ campus (Ashgrove University). The build plan is in [PLAN.md](PLAN.md); the rules
   safe route is left. It uses the Low vision profile. Commands are heard when it asks and in a short pause after each step, not in
   the middle of a sentence. Needs Chrome, Edge or Safari for hearing you; without it, or with the microphone blocked, it says so and
   offers a link to the campus map.
-- **Freshness.** Reports go *outdated* if nobody re-confirms them (parked vehicle 3 h, flooding 12 h, blocked
+- **Freshness.** Reports go *outdated* if the admin does not re-verify them (parked vehicle 3 h, flooding 12 h, blocked
   ramp 3 days, broken pavement 30 days, missing kerb cut 90 days). Outdated reports warn but no longer block.
-- **Still there / Cleared.** Anyone can confirm a report with **Still there**. Only the signed-in admin can mark a report
-  **Cleared** (the route is restored at once), so an anonymous press cannot lift a block. Visitors do not see the Cleared button.
+- **Cleared and Verify.** Visitors can only report an obstacle: there is no "Still there" button. Only the signed-in admin can verify a report
+  (it becomes a hard block) or mark it **Cleared** or resolved (the route is restored at once). Visitors do not see those buttons.
 - **Dashboard** (`#/admin`). Anyone can look at it: filter reports and see how many paths are affected. Verifying or resolving reports needs the admin login.
 - **Works offline.** Without the server, reports live in the browser (localStorage). When the server is up,
   reports are shared between devices.
@@ -254,7 +254,6 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 | GET | `/campus` | | Campus nodes and paths |
 | GET | `/reports` | | Reports (status derived) and confirmations |
 | POST | `/reports` | multipart: `pathId, category, severity, confidence, aiCategory, reporterId, description, photo` | New report; photo saved to `uploads/` |
-| POST | `/reports/:id/confirm` | `{ voterId }` | "Still there" |
 | POST | `/reports/:id/clear` | `{ voterId }` | "Cleared" |
 | POST | `/reports/:id/verify` | | Admin verify (needs the login) |
 | POST | `/reports/:id/resolve` | | Admin resolve (needs the login) |

@@ -48,7 +48,7 @@ reachable/
 - **Node**: `id, name, x, y, areaId`
 - **Path**: `id, from, to, lengthM, stepFree, widthM, slopePct, areaId` (paths are two-way)
 - **Report**: `id, pathId, category, severity, status, confidence, photoUrl, description, createdAt, lastConfirmedAt, clearedAt`
-- **Confirmation**: `reportId, vote (still_there | cleared), at`
+- **Confirmation**: `reportId, vote (cleared), at` (the old `still_there` vote no longer exists)
 - Categories: `blocked_ramp, parked_vehicle, flooding, broken_pavement, missing_kerb_cut, other`
 - Severity: `blocked` (fully impassable) or `partial`
 - Status (derived, never trusted from storage): `verified, unverified, outdated, cleared`
@@ -74,9 +74,9 @@ Obstacle effect by report status:
 - `cleared`: no effect
 
 Trust and freshness:
-- Confidence = AI confidence (0 to 1) combined with the number of confirmations.
-- Two or more independent "still there" confirmations, or an admin verify, makes a report `verified`.
-- A report becomes `outdated` after this long without a new confirmation: parked vehicle 3 h, flooding 12 h,
+- Confidence = the AI confidence (0 to 1), and 1 after an admin verify.
+- Only an admin verify makes a report `verified`. Visitors can only file a report; there is no "still there" step (Interpretation 23).
+- A report becomes `outdated` after this long without an admin verify: parked vehicle 3 h, flooding 12 h,
   blocked ramp 3 days, broken pavement 30 days, missing kerb cut 90 days, other 3 days.
 
 Fail-safe: if no path remains after hard exclusions and blocks, return `{ status: "no_verified_route" }` plus the best
@@ -139,20 +139,20 @@ Write each decision down here when it is made, so later phases stay consistent.
 3. **Several reports on one path do not stack.** The worst one counts, so duplicates are not double-counted.
 4. **Data model additions** (listed fields keep their exact names): Report gains `areaId`, `reporterId`,
    `adminVerifiedAt` and `aiCategory`; Confirmation gains `areaId` and `voterId`. Timestamps are epoch ms.
-5. **Independent confirmations** = distinct `voterId`s voting `still_there`, not counting the reporter's own
+5. **Independent confirmations (superseded by 23: there are none now)** = distinct `voterId`s voting `still_there`, not counting the reporter's own
    device. The original report is not a confirmation, so verified means reporter + 2 others, or an admin.
    The reporter's own "still there" neither counts nor refreshes freshness. A device can say "still there"
    again after 30 minutes; that refreshes freshness but still counts once (`voteBlockReason` in trust.ts).
-6. **Freshness**: `lastConfirmedAt` = the latest of the report, a `still_there` vote and an admin verify.
+6. **Freshness (only the report and an admin verify move it now, see 23)**: `lastConfirmedAt` = the latest of the report, a `still_there` vote and an admin verify.
    A verified report also goes outdated if nobody re-confirms it within its decay time.
 7. **Clearing**: one `cleared` vote or an admin resolve clears a report immediately (Phase 4 needs instant
    restore). Cleared is final; a returning obstacle is filed as a new report. Override (user decision): on the shared
    server only the signed-in admin may clear ANY report, unverified or verified (`ADMIN_ONLY_CLEAR` in `trust.ts`, checked by the
-   server with a 403 and by the browser, which hides the Cleared button from everyone else). Still there stays open to
-   everyone. Two anonymous browsers cannot be told apart from two people, so the crowd cannot be trusted to lift a block.
+   server with a 403 and by the browser, which hides the Cleared button from everyone else). Still there used to stay open to
+   everyone (removed, see 23). Two anonymous browsers cannot be told apart from two people, so the crowd cannot be trusted to lift a block.
    With no server the data is the visitor's own browser copy, so Cleared stays open there (this is what keeps the demo on
    Vercel working).
-8. **Confidence shown** = `1 - (1 - aiConfidence) * 0.5^confirmations`, and 1 after an admin verify.
+8. **Confidence shown (now only the AI confidence, and 1 after an admin verify, see 23)** = `1 - (1 - aiConfidence) * 0.5^confirmations`, and 1 after an admin verify.
    Status depends only on counts and age, as written in the plan.
 9. **Why a route changed**: the core also computes the "usual" route (same profile, no reports). If the route
    differs, `reroute.because` lists the reports on the usual route. For `no_verified_route`, `blockedBy` lists
@@ -243,3 +243,10 @@ Write each decision down here when it is made, so later phases stay consistent.
     mid sentence, because a microphone left on while the speaker talks hears itself. "Return to map" and Escape leave. The "Change how you use REACHABLE" link
     under the map page returns to the welcome choice.
     The welcome page also speaks and listens (`src/voice/welcomeChoice.ts`, `Welcome.tsx`): after one key or tap (a browser rule; a click that brought the person there already counts) it says the two choices, hears "blind or low vision" or "campus map" (both or neither is asked again), says it is opening it, and goes. The buttons stay and always work; silence, a blocked microphone or no speech support are explained aloud and the buttons remain.
+23. **Only the admin verifies or clears; visitors only report** (user decision, supersedes the crowd parts of Interpretations 5 to 8): the "Still there" button and
+    `POST /api/reports/:id/confirm` are gone (the endpoint answers 404). `deriveStatus` makes a report `verified` only when `adminVerifiedAt` is set; `unverified` is the
+    state of every new report. Freshness (`lastConfirmedAt`) moves only with the report itself or an admin verify, so an unverified report simply expires after its decay
+    time and a verified one expires unless the admin re-verifies it. Confidence shown is the AI confidence, and 1 after an admin verify. `Vote` is `'cleared'` only; old
+    `still_there` rows in a database are ignored (no migration). `clearBlockReason` replaces `voteBlockReason`: clearing is admin only on the shared server and open in the
+    visitor's own browser copy when there is no server (so the Vercel-style demo still works). Visitors see no buttons under a report; the admin keeps Cleared in the list and
+    Verify and Resolve on the Dashboard. Seeds: `seed-raised-slabs` is admin verified, `seed-parked-van` is unverified.

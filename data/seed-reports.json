@@ -11,8 +11,7 @@
       "aiCategory": "parked_vehicle",
       "photoUrl": "/samples/parked-vehicle.svg",
       "description": "Delivery van parked across half the path just inside the gate.",
-      "reportedMinutesAgo": 40,
-      "stillThere": [{ "voterId": "seed-device-2", "minutesAgo": 15 }]
+      "reportedMinutesAgo": 40
     },
     {
       "id": "seed-flooding",
@@ -36,10 +35,7 @@
       "photoUrl": null,
       "description": "Raised paving slabs outside the Lecture Halls entrance.",
       "reportedMinutesAgo": 7200,
-      "stillThere": [
-        { "voterId": "seed-device-3", "minutesAgo": 2880 },
-        { "voterId": "seed-device-4", "minutesAgo": 1440 }
-      ]
+      "adminVerifiedMinutesAgo": 1440
     },
     {
       "id": "seed-kerb",

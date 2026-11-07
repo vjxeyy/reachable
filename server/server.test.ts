@@ -115,17 +115,16 @@ describe('API', () => {
     expect((await api('POST', '/api/reports', form)).status).toBe(400)
   })
 
-  it('needs two independent confirmations to verify, and the reporter cannot confirm', async () => {
+  it('has no confirm step, so no number of devices can verify a report', async () => {
     const { data } = await api<{ report: Report }>('POST', '/api/reports', newReport())
     const id = data.report.id
-    const own = await api<{ error: string }>('POST', `/api/reports/${id}/confirm`, { voterId: 'device-a' })
-    expect(own.status).toBe(409)
-    expect(own.data.error).toMatch(/You reported this/)
-    await api('POST', `/api/reports/${id}/confirm`, { voterId: 'device-b' })
-    const second = await api<{ reports: Report[] }>('POST', `/api/reports/${id}/confirm`, { voterId: 'device-c' })
-    expect(second.status).toBe(200)
-    expect(second.data.reports[0].status).toBe('verified')
-    expect((await api('POST', `/api/reports/does-not-exist/confirm`, { voterId: 'x' })).status).toBe(404)
+    // The old "still there" endpoint is gone, so no number of devices can verify a report.
+    for (const voterId of ['device-a', 'device-b', 'device-c', 'device-d']) {
+      expect((await api('POST', `/api/reports/${id}/confirm`, { voterId })).status).toBe(404)
+    }
+    const list = await api<{ reports: Report[] }>('GET', '/api/reports')
+    expect(list.data.reports.find((r) => r.id === id)?.status).toBe('unverified')
+    // Verify, resolve and clear are refused without the admin login: see auth.test.ts (every request here is the admin's).
   })
 
   it('GET /route reroutes around a block and restores the route when it is cleared', async () => {
