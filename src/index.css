@@ -1480,11 +1480,36 @@ textarea {
     border-top: 1px solid var(--border);
   }
   .nav a {
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     justify-content: center;
     gap: 6px;
     padding: 12px 6px 10px;
     font-size: 0.9rem;
+    white-space: normal;
+    text-align: center;
+  }
+}
+
+/* At about 360 px the three menu links wrap onto two lines and the status and Admin button stack, so nothing runs past the screen. */
+@media (max-width: 480px) {
+  .topbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, auto);
+  }
+  .header-tools {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+    min-width: 0;
+  }
+  .source {
+    white-space: normal;
+    text-align: right;
+  }
+  .nav a {
+    flex-direction: column;
+    gap: 2px;
+    font-size: 0.85rem;
   }
 }
 
