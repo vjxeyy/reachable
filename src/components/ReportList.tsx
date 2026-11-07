@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react'
 import { describePath } from '../core/graph'
-import { SEED_REPORTER } from '../core/seed'
 import { ADMIN_ONLY_CLEAR } from '../core/trust'
 import type { Campus, Report } from '../core/types'
 import { photoSrc } from '../state/api'
@@ -37,11 +36,6 @@ export function ReportList({ campus, reports, now, emptyText, showPath = true, o
             <div className="report-title">
               <strong>{CATEGORY_LABEL[report.category]}</strong>
               <span className="muted small">{report.severity === 'blocked' ? 'blocked' : 'partly blocked'}</span>
-              {report.reporterId === SEED_REPORTER && (
-                <span className="tag-example" title="Made-up report that ships with the demo">
-                  Example
-                </span>
-              )}
             </div>
             {showPath &&
               (onSelectPath ? (

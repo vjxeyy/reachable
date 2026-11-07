@@ -108,15 +108,14 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
   `CLASSIFIER=clip`, else the simulated classifier. Keys come only from env vars. If the real model is off, fails,
   is still loading or is too slow, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or a key.
 - The app must work with no backend (localStorage store) and switch to the API when it is reachable.
-- Demo support: 3 or 4 pre-seeded reports (tagged "Example"), a "Reset demo" button, and a "+6 hours" time control.
-  They live in a "Demo tools" footer, not the header, because only a presenter needs them.
+- Demo support: a "Reset demo" button (removes every report) and a "+6 hours" time control. There are no pre-seeded example
+  reports (Interpretation 24). They live in a "Demo tools" footer, not the header, because only a presenter needs them.
 - Must be usable at phone width (about 360 px).
 - Style rules (checked by `server/style-rules.test.ts`, which fails with file and line): no purple or indigo, no gradients,
   no pill-shaped buttons or tags (corners are 4 to 8 px, panels 16 px), no emoji or glyph icons (use the SVG icons in
   `src/components/icons.tsx`), no em or en dashes, no cursor effects or scroll-driven animation, no fake reviews, counters
-  or metrics, no vague hero text, no AI-looking photos. Demo content is labelled: seeded reports say "Example",
-  simulated classifier output says "AI suggestion (demo)". The report form has no sample-drawing buttons (removed by the user);
-  the bundled drawings in `public/samples/` are only the photos of the seeded example reports.
+  or metrics, no vague hero text, no AI-looking photos. Demo content is labelled: simulated classifier output says
+  "AI suggestion (demo)". The report form has no sample-drawing buttons (removed by the user), and `public/samples/` is gone.
 - Design tokens are the `:root` variables in `src/index.css` (deep green and cream). Text pairs keep at least 4.5:1
   contrast, and a status is never shown by colour alone: the word is always there.
 - Tests never touch the real database. Server tests use an in-memory SQLite database. `server/db.ts` refuses
@@ -251,4 +250,8 @@ Write each decision down here when it is made, so later phases stay consistent.
     time and a verified one expires unless the admin re-verifies it. Confidence shown is the AI confidence, and 1 after an admin verify. `Vote` is `'cleared'` only; old
     `still_there` rows in a database are ignored (no migration). `clearBlockReason` replaces `voteBlockReason`: clearing is admin only on the shared server and open in the
     visitor's own browser copy when there is no server (so the Vercel-style demo still works). Visitors see no buttons under a report; the admin keeps Cleared in the list and
-    Verify and Resolve on the Dashboard. Seeds: `seed-raised-slabs` is admin verified, `seed-parked-van` is unverified.
+    Verify and Resolve on the Dashboard.
+24. **No example reports** (user decision, overrides PLAN.md Phase 8 and the old "Demo support" rule): the app starts with no reports, on the server and in a
+    visitor's own browser. `data/seed-reports.json`, `src/core/seed.ts`, the "Example" tag and `public/samples/` are removed. "Reset demo" (`POST /api/demo/reset`,
+    admin only) now only deletes every report and its photo. A browser that already saved the old examples keeps them until Reset demo is pressed there. On Render
+    the disk is temporary, so a redeploy starts with an empty database. Acceptance checks do not use seed data.

@@ -14,7 +14,7 @@ import { DEFAULT_DB_PATH, openDb, seedCampus } from './db'
 import { authRouter } from './routes/auth'
 import { classifyRouter } from './routes/classify'
 import { HttpError, type ServerContext } from './routes/context'
-import { demoRouter, seedDemoIfNew } from './routes/demo'
+import { demoRouter } from './routes/demo'
 import { reportsRouter } from './routes/reports'
 import { routeRouter } from './routes/route'
 
@@ -100,7 +100,6 @@ function main(): void {
   const campus = loadCampus(campusData)
   const db = openDb(dbPath)
   seedCampus(db, campus)
-  if (seedDemoIfNew(db, campus.areaId)) console.log('Loaded the example reports into a new database.')
   const chosen = buildServerClassifier(process.env, path.join(path.dirname(dbPath), 'models'))
   if (chosen.clipRuntime) {
     const started = Date.now()

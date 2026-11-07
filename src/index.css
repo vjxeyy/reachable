@@ -1316,14 +1316,6 @@ textarea {
   line-height: 1.2;
   color: var(--muted);
 }
-.tag-example {
-  padding: 1px 6px;
-  border: 1px solid var(--muted);
-  border-radius: 4px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--muted);
-}
 .report-body {
   display: grid;
   gap: 2px;

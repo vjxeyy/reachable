@@ -97,7 +97,7 @@ function DemoFooter() {
       <h2>Demo tools</h2>
       <p className="muted small">
         Only for presenting. Reports expire after a set time, so jump the clock ahead to show one expiring, or reset
-        to bring back the example reports.
+        to remove every report.
       </p>
       <div className="demo-controls" aria-label="Demo controls">
       <span className={`clock${timeOffsetMs > 0 ? ' clock-ahead' : ''}`} aria-live="polite">
@@ -115,7 +115,7 @@ function DemoFooter() {
         type="button"
         className="btn btn-quiet btn-small"
         onClick={() => {
-          if (window.confirm('Reset the demo? All reports are removed and the example reports come back.')) void resetDemo()
+          if (window.confirm('Reset the demo? All reports are removed.')) void resetDemo()
         }}
       >
         Reset demo

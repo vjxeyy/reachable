@@ -14,7 +14,6 @@ import { createAuth, hashPassword, verifyPassword, type AuthConfig } from './aut
 import { buildServerClassifier } from './classifier-config'
 import { openDb, seedCampus, type DB } from './db'
 import { createApp } from './index'
-import { seedDemoIfNew } from './routes/demo'
 
 const campus = loadCampus(campusData)
 const OWNER = { email: 'Owner@Test.Example', password: 'owner-test-password' }
@@ -26,7 +25,7 @@ let db: DB
 let server: Server
 let base: string
 let uploadsDir: string
-const reportId = 'seed-parked-van'
+let reportId = ''
 
 function start(config: AuthConfig) {
   const auth = createAuth(config, () => now)
@@ -46,7 +45,6 @@ const ownerConfig: AuthConfig = { ownerEmail: OWNER.email, ownerPassword: OWNER.
 beforeAll(() => {
   db = openDb(':memory:')
   seedCampus(db, campus)
-  seedDemoIfNew(db, campus.areaId)
   uploadsDir = mkdtempSync(path.join(os.tmpdir(), 'reachable-auth-uploads-'))
 })
 
@@ -59,7 +57,28 @@ afterAll(() => {
 beforeEach(async () => {
   now = Date.now()
   await start(ownerConfig)
+  reportId = await fileReport()
 })
+
+/** Anyone can file a report, no login needed. Returns its id. */
+async function fileReport(overrides: Record<string, unknown> = {}): Promise<string> {
+  const response = await fetch(base + '/api/reports', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      pathId: 'p-canteen-hostel-ramp',
+      category: 'blocked_ramp',
+      severity: 'blocked',
+      confidence: 0.9,
+      aiCategory: 'blocked_ramp',
+      reporterId: 'device-a',
+      description: 'Barrier across the ramp',
+      ...overrides,
+    }),
+  })
+  expect(response.status).toBe(201)
+  return ((await response.json()) as { report: { id: string } }).report.id
+}
 
 interface Result<T = Record<string, unknown>> {
   status: number
@@ -186,25 +205,27 @@ describe('what needs the owner', () => {
 describe('clearing reports', () => {
   const clear = (id: string, cookie?: string | null) => call('POST', `/api/reports/${id}/clear`, { voterId: 'a-passer-by' }, cookie)
 
-  it('keeps clearing for the admin, for unverified, outdated and verified reports alike', async () => {
+  it('keeps clearing for the admin, for unverified and verified reports alike', async () => {
     const cookie = await owner()
-    await call('POST', '/api/demo/reset', {}, cookie)
-    // seed-kerb is unverified; seed-flooding and seed-raised-slabs were verified by an admin.
-    for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) {
+    // One report stays unverified, the other is verified by the admin.
+    const unverified = reportId
+    const verified = await fileReport({ pathId: 'p-sports-lab', category: 'flooding' })
+    expect((await call('POST', `/api/reports/${verified}/verify`, {}, cookie)).status).toBe(200)
+    const ids = [unverified, verified]
+    for (const id of ids) {
       const refused = await clear(id)
       expect(refused.status).toBe(403)
       expect(JSON.stringify(refused.data)).toMatch(/Only the admin/)
     }
     // There is no "still there" step any more: nobody can confirm a report.
-    expect((await call('POST', '/api/reports/seed-flooding/confirm', { voterId: 'a-passer-by' })).status).toBe(404)
+    expect((await call('POST', `/api/reports/${verified}/confirm`, { voterId: 'a-passer-by' })).status).toBe(404)
     // The signed-in admin can clear them.
-    for (const id of ['seed-kerb', 'seed-flooding', 'seed-raised-slabs']) expect((await clear(id, cookie)).status).toBe(200)
+    for (const id of ids) expect((await clear(id, cookie)).status).toBe(200)
   })
 
   it('does not let the owner login of a different server clear anything', async () => {
-    await call('POST', '/api/demo/reset', {}, await owner())
     const forged = createAuth({ ...ownerConfig, sessionSecret: 'another-secret' }, () => now).sign(OWNER.email.toLowerCase())
-    expect((await clear('seed-kerb', `reachable_session=${forged}`)).status).toBe(403)
+    expect((await clear(reportId, `reachable_session=${forged}`)).status).toBe(403)
   })
 })
 

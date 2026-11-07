@@ -14,7 +14,6 @@ import { createAuth } from './auth'
 import { DEFAULT_DB_PATH, deleteAreaReports, openDb, seedCampus, type DB } from './db'
 import { buildServerClassifier } from './classifier-config'
 import { createApp } from './index'
-import { seedDemoIfNew } from './routes/demo'
 
 const campus = loadCampus(campusData)
 // Made-up test login. Every request below carries the owner's session, so admin actions are allowed.
@@ -200,7 +199,7 @@ describe('API', () => {
     expect((await api('POST', '/api/classify', new FormData())).status).toBe(400)
   })
 
-  it('Reset demo deletes all reports and their photos, then restores the example reports', async () => {
+  it('Reset demo deletes all reports and their photos, and leaves none behind', async () => {
     const form = new FormData()
     for (const [key, value] of Object.entries(newReport())) form.append(key, String(value))
     form.append('photo', new Blob([new Uint8Array([0xff, 0xd8, 0xff, 0xd9])], { type: 'image/jpeg' }), 'ramp.jpg')
@@ -210,17 +209,15 @@ describe('API', () => {
 
     const reset = await api<{ reports: Report[] }>('POST', '/api/demo/reset', { at: Date.now() })
     expect(reset.status).toBe(200)
-    expect(reset.data.reports.map((r) => r.id).sort()).toEqual(
-      ['seed-flooding', 'seed-kerb', 'seed-parked-van', 'seed-raised-slabs'],
-    )
+    expect(reset.data.reports).toEqual([])
     expect(readdirSync(uploadsDir)).not.toContain(photoFile)
+    expect((await api<{ reports: Report[] }>('GET', '/api/reports')).data.reports).toEqual([])
   })
 
-  it('loads the example reports only once into a new database', () => {
+  it('starts with no reports: there are no example reports', async () => {
     const fresh = openDb(':memory:')
-    expect(seedDemoIfNew(fresh, campus.areaId)).toBe(true)
-    expect(seedDemoIfNew(fresh, campus.areaId)).toBe(false)
-    expect(fresh.prepare('SELECT COUNT(*) AS n FROM reports').get()).toEqual({ n: 4 })
+    seedCampus(fresh, campus)
+    expect(fresh.prepare('SELECT COUNT(*) AS n FROM reports').get()).toEqual({ n: 0 })
     fresh.close()
   })
 })

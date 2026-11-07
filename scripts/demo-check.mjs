@@ -155,5 +155,5 @@ try {
   }
 }
 
-console.log(failed ? '\nDemo check FAILED' : '\nAll 5 demo steps passed. Demo data has been reset.')
+console.log(failed ? '\nDemo check FAILED' : '\nAll 5 demo steps passed. All reports on that server have been removed.')
 process.exitCode = failed ? 1 : 0

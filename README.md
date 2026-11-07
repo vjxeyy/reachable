@@ -163,8 +163,8 @@ Either way the user always confirms or corrects the category.
 
 ## The 60-second demo
 
-Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. Reset restores the 4 example reports (each is
-tagged **Example**, so nobody mistakes them for real reports), sets the clock back to now and clears the route picker.
+Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. There are no example reports: the app starts with none.
+Reset removes every report, sets the clock back to now and clears the route picker.
 
 1. **Route.** Choose From **Library**, To **Hostel**, and tick **Wheelchair** (no profile is ticked at first).
    A step-free route appears (460 m, via the Canteen and the hostel ramp).
@@ -181,7 +181,7 @@ tagged **Example**, so nobody mistakes them for real reports), sets the clock ba
 
 Extras if you have time:
 
-- **+6 hours** under **Demo tools**: the example *parked vehicle* report turns **Outdated** and stops blocking.
+- **+6 hours** under **Demo tools**: a *parked vehicle* report you filed turns **Outdated** and stops blocking.
   The clock label then reads *Demo clock: now + 6 h*, and **Back to now** undoes it.
 - **Dashboard**: verify an unverified report and it becomes a hard block at once. Try Wheelchair, Main Gate to
   Health Centre with a blocked Health Centre ramp, before and after verifying.
@@ -226,7 +226,7 @@ npm test
 ```
 
 134 Vitest tests, including the login tests in `server/auth.test.ts` and `server/style-rules.test.ts`, which fails on purple, gradients, pill shapes, glyph icons, dashes, cursor effects and testimonial copy. The 8 acceptance checks from PLAN.md section 8 are in `src/core/route.test.ts`. The other
-tests cover trust and freshness, the demo seed data, the classifiers and the API. Server tests use an
+tests cover trust and freshness, the classifiers and the API. Server tests use an
 in-memory SQLite database only; `server/db.ts` refuses to open a database file while tests run. The
 real classifiers are tested with stand-ins (a local fake OpenRouter server and a fake CLIP model), so the tests never need a key, a download or the internet.
 
@@ -260,14 +260,13 @@ All under `/api`. Requests may include `at` (epoch ms) so the demo clock ("+6 ho
 | GET | `/auth/config` | | Whether admin login is set up |
 | POST | `/auth/login`, `/auth/logout` | `{ email, password }` | Start or end the session cookie |
 | GET | `/auth/me` | | Who is signed in |
-| POST | `/demo/reset` | | Admin only: restore the example reports |
+| POST | `/demo/reset` | | Admin only: remove every report |
 
 ## Project structure
 
 ```
 data/campus.json         the campus (15 nodes, 26 paths)
-data/seed-reports.json   example reports for a fresh start / Reset demo
-src/core/                routing, profiles, trust, seed builder + tests (no React, no network)
+src/core/                routing, profiles, trust + tests (no React, no network)
 src/classifier/          interface + fallback (index), simulated, openrouter, clip
 src/components/          CampusMap, RoutePanel, ReportForm, ReportList, TrustBadge
 src/pages/               Home (map), Report (report obstacle), Admin (the Dashboard)
@@ -293,8 +292,7 @@ checks `/api/health`. On the free plan:
 
 - It sleeps after 15 minutes without traffic, and the first visit then takes about a minute. Open it a minute
   before presenting; an open tab keeps it awake.
-- The disk is temporary: reports and photos reset when it restarts or redeploys, and the example reports come
-  back on their own. For lasting data, use a paid plan with a disk and set `DB_PATH` and `UPLOADS_DIR` on it.
+- The disk is temporary: reports and photos reset when it restarts or redeploys, and it starts empty again. For lasting data, use a paid plan with a disk and set `DB_PATH` and `UPLOADS_DIR` on it.
 - For a real photo classifier, add `OPENROUTER_API_KEY` under the service's **Environment** settings (free key, see above). Without it the demo classifier is used. CLIP does not fit this plan's memory.
 
 Check a deploy with `npm run demo:check -- https://<your-service>.onrender.com`. It resets the demo data there.
