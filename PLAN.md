@@ -174,7 +174,7 @@ Work one phase at a time. Start each Claude Code session with: "Read CLAUDE.md a
 
 ### Phase 8: Polish, deploy, rehearse (half a day)
 - ~~Seed 3 or 4 realistic example reports so the map is not empty on first load.~~ Dropped by the user: the app starts with no reports (CLAUDE.md Interpretation 24).
-- Add a "Reset demo" button.
+- ~~Add a "Reset demo" button.~~ Dropped by the user (CLAUDE.md Interpretation 24).
 - Make it usable on a phone width.
 - Deploy and test the live link on a phone.
 - Rehearse the 60-second demo three times.
@@ -205,7 +205,7 @@ Work one phase at a time. Start each Claude Code session with: "Read CLAUDE.md a
 |---|---|
 | Real classifier is inaccurate or down | Simulated classifier plus user confirmation (already built) |
 | Backend takes too long | Ship Phase 5 with `localStorage`, say shared data is next |
-| Demo data looks empty | The user chose an empty start: file a report live, and use the Reset demo button between runs |
+| Demo data looks empty | The user chose an empty start: file a report live and clear it with the admin's Cleared button |
 | Judge asks about fake reports | Unverified reports only add a penalty; blocking needs an admin verify |
 | Judge asks "how is this different from StreetCo or Route4U?" | Verification-aware routing, fail-safe "no verified route", freshness by category, facilities dashboard |
 

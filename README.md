@@ -163,8 +163,8 @@ Either way the user always confirms or corrects the category.
 
 ## The 60-second demo
 
-Start from a fresh load, or press **Reset demo** under **Demo tools** at the bottom of the page. There are no example reports: the app starts with none.
-Reset removes every report, sets the clock back to now and clears the route picker.
+Start from a fresh load. There are no example reports and no reset button: the app starts with none, and the admin's **Cleared** button removes a
+report's effect on routes (step 5). **Demo tools** at the bottom of the page only has the clock (**+6 hours** and **Back to now**).
 
 1. **Route.** Choose From **Library**, To **Hostel**, and tick **Wheelchair** (no profile is ticked at first).
    A step-free route appears (460 m, via the Canteen and the hostel ramp).

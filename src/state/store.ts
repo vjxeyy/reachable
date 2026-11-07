@@ -16,7 +16,6 @@ import {
   apiLogin,
   apiLogout,
   apiMe,
-  apiResetDemo,
   apiSnapshot,
   apiClear,
   isUnreachable,
@@ -506,40 +505,4 @@ export function adminVerify(reportId: string): Promise<string | null> {
 export function adminResolve(reportId: string): Promise<string | null> {
   const at = now()
   return write((data) => withAdmin(data, reportId, 'resolve', at), () => apiAdmin(reportId, 'resolve', at)).then(afterRefusal)
-}
-
-/**
- * Reset demo: every report removed, demo clock back to now, route picker cleared. Uses the server
- * when it is reachable (so every browser sees the reset), otherwise this browser's copy.
- */
-export async function resetDemo(): Promise<void> {
-  // On the shared server only the signed-in admin may wipe every report. Say so before changing anything here.
-  if (state.source === 'api' && !state.auth.user) {
-    notify('Sign in as the admin to reset the demo.')
-    return
-  }
-  writeVersion++
-  setOffset(0)
-  setState({ selection: EMPTY_SELECTION })
-  const at = Date.now()
-  try {
-    if (state.source === 'api') {
-      try {
-        show(await apiResetDemo(at))
-        notify('Demo reset. All reports removed for everyone.')
-        return
-      } catch (error) {
-        if (!isUnreachable(error)) {
-          notify(error instanceof Error ? error.message : 'The server could not reset the demo.')
-          return
-        }
-        fallBackToLocal({ reports: [], confirmations: [] }, 'Server unreachable. Demo reset in this browser only.')
-        return
-      }
-    }
-    saveLocal({ reports: [], confirmations: [] })
-    notify('Demo reset. All reports removed.')
-  } finally {
-    writeVersion++
-  }
 }

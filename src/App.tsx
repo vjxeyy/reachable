@@ -7,7 +7,7 @@ import { Login } from './pages/Login'
 import { Report } from './pages/Report'
 import { VoiceGuide } from './pages/VoiceGuide'
 import { Welcome } from './pages/Welcome'
-import { advanceClock, dismissToast, logout, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
+import { advanceClock, dismissToast, logout, resetClock, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
 
@@ -96,8 +96,7 @@ function DemoFooter() {
     <footer className="demo-footer">
       <h2>Demo tools</h2>
       <p className="muted small">
-        Only for presenting. Reports expire after a set time, so jump the clock ahead to show one expiring, or reset
-        to remove every report.
+        Only for presenting. Reports expire after a set time, so jump the clock ahead to show one expiring.
       </p>
       <div className="demo-controls" aria-label="Demo controls">
       <span className={`clock${timeOffsetMs > 0 ? ' clock-ahead' : ''}`} aria-live="polite">
@@ -111,15 +110,6 @@ function DemoFooter() {
           Back to now
         </button>
       )}
-      <button
-        type="button"
-        className="btn btn-quiet btn-small"
-        onClick={() => {
-          if (window.confirm('Reset the demo? All reports are removed.')) void resetDemo()
-        }}
-      >
-        Reset demo
-      </button>
       </div>
     </footer>
   )

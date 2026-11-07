@@ -108,8 +108,8 @@ unverified option labelled **"Unverified, use with caution"**. Never present an 
   `CLASSIFIER=clip`, else the simulated classifier. Keys come only from env vars. If the real model is off, fails,
   is still loading or is too slow, fall back to the simulated classifier. Keep `.env.example`, never commit `.env` or a key.
 - The app must work with no backend (localStorage store) and switch to the API when it is reachable.
-- Demo support: a "Reset demo" button (removes every report) and a "+6 hours" time control. There are no pre-seeded example
-  reports (Interpretation 24). They live in a "Demo tools" footer, not the header, because only a presenter needs them.
+- Demo support: a "+6 hours" time control (with "Back to now"). There are no pre-seeded example reports and no "Reset demo" button
+  (Interpretation 24). It lives in a "Demo tools" footer, not the header, because only a presenter needs it.
 - Must be usable at phone width (about 360 px).
 - Style rules (checked by `server/style-rules.test.ts`, which fails with file and line): no purple or indigo, no gradients,
   no pill-shaped buttons or tags (corners are 4 to 8 px, panels 16 px), no emoji or glyph icons (use the SVG icons in
@@ -252,6 +252,7 @@ Write each decision down here when it is made, so later phases stay consistent.
     visitor's own browser copy when there is no server (so the Vercel-style demo still works). Visitors see no buttons under a report; the admin keeps Cleared in the list and
     Verify and Resolve on the Dashboard.
 24. **No example reports** (user decision, overrides PLAN.md Phase 8 and the old "Demo support" rule): the app starts with no reports, on the server and in a
-    visitor's own browser. `data/seed-reports.json`, `src/core/seed.ts`, the "Example" tag and `public/samples/` are removed. "Reset demo" (`POST /api/demo/reset`,
-    admin only) now only deletes every report and its photo. A browser that already saved the old examples keeps them until Reset demo is pressed there. On Render
-    the disk is temporary, so a redeploy starts with an empty database. Acceptance checks do not use seed data.
+    visitor's own browser. `data/seed-reports.json`, `src/core/seed.ts`, the "Example" tag and `public/samples/` are removed. The "Reset demo" button
+    is removed too (user decision). `POST /api/demo/reset` (admin only, deletes every report and its photo) stays as an API for `npm run demo:check` and tests; no page calls it.
+    A browser that already saved the old examples keeps them in its own copy (clear the site data to drop them). On Render the disk is temporary, so a redeploy starts
+    with an empty database. Acceptance checks do not use seed data.
