@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { findRoute, type RouteResult } from '../core/route'
 import { withDerivedStatus } from '../core/trust'
 import type { Confirmation, Report } from '../core/types'
-import { setExperience } from '../state/experience'
 import { campus, setSelection, useNow, useStore } from '../state/store'
 import { begin, onHeard, onRouteChange, onSilence, onWake, type GuideContext, type GuideState, type Listen, type Turn } from '../voice/guide'
 import { describeChange } from '../voice/liveUpdate'
@@ -226,8 +225,7 @@ export function VoiceGuide() {
 
   useEffect(() => {
     const leave = () => {
-      setExperience('map')
-      window.location.hash = '#/'
+      window.location.hash = '#/map'
     }
     const s = createSession({ inputs: () => inputs.current, show: setLine, status: setStatus, mode: setMode, leave })
     session.current = s
@@ -258,9 +256,7 @@ export function VoiceGuide() {
       <p className="voice-guide-status">{status}</p>
       {(mode === 'unsupported' || mode === 'failed') && (
         <p className="voice-guide-exit">
-          <a href="#/" onClick={() => setExperience('map')}>
-            Open the campus map
-          </a>
+          <a href="#/map">Open the campus map</a>
         </p>
       )}
     </main>

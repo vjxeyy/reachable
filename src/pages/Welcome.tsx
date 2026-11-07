@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { MapIcon, MicIcon } from '../components/icons'
-import { setExperience } from '../state/experience'
 import { interpret } from '../voice/commands'
 import { canListen, listenOnce, say, stopNow, unlockSpeech, type ListenError } from '../voice/speech'
 import { chooseExperience, type Experience } from '../voice/welcomeChoice'
@@ -147,8 +146,7 @@ export function Welcome() {
 
   useEffect(() => {
     const go = (choice: Experience) => {
-      if (choice === 'map') setExperience('map')
-      window.location.hash = choice === 'voice' ? '#/voice' : '#/'
+      window.location.hash = choice === 'voice' ? '#/voice' : '#/map'
     }
     const session = createWelcomeVoice({ show: setLine, status: setStatus }, go)
     session.init()
@@ -186,8 +184,7 @@ export function Welcome() {
           type="button"
           className="btn btn-ghost welcome-choice"
           onClick={() => {
-            setExperience('map')
-            window.location.hash = '#/'
+            window.location.hash = '#/map'
           }}
         >
           <MapIcon size={28} />

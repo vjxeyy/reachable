@@ -230,8 +230,10 @@ Write each decision down here when it is made, so later phases stay consistent.
     such as "wheelchair", "crutches", "low vision", "visually impaired"; "blind" is read as low vision, the stricter profile, and the review shows what was
     ticked). The review has the same profile boxes, a profile left out is shown unticked, and "Use these" stays disabled until a start, a destination and at
     least one profile are set. A profile already ticked in the panel is kept when the person says only places.
-22. **Voice guide for blind or low vision** (`src/pages/Welcome.tsx`, `VoiceGuide.tsx`, `src/voice/commands.ts`, `guide.ts`, `liveUpdate.ts`, `src/state/experience.ts`):
-    the site now opens on a welcome choice (Blind or low vision, or Campus map); only "map" is remembered, because speech needs a tap each visit.
+22. **Voice guide for blind or low vision** (`src/pages/Welcome.tsx`, `VoiceGuide.tsx`, `src/voice/commands.ts`, `guide.ts`, `liveUpdate.ts`):
+    the site always opens on a welcome choice (Blind or low vision, or Campus map) at the root address (`#/`, `#/welcome` or no hash); nothing is remembered
+    (user decision: an earlier build remembered "map" in localStorage and skipped the welcome screen for returning visitors). The map lives at `#/map`, and every
+    link to it (brand, "Campus map", "Return to map", after a report is saved) uses that address.
     `#/voice` shows only a title, the line being spoken and its status in words: no buttons, fields or menus (a test-checked rule of the screen, with one text
     link to the map shown only when voice cannot work at all). The conversation is a pure state machine (`guide.ts`): start, confirm, destination, confirm,
     route, then one step per listening window; silence between steps means "carry on". Commands must be the whole sentence, so "North Gate" or "Bus Stop"

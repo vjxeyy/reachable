@@ -7,7 +7,6 @@ import { Login } from './pages/Login'
 import { Report } from './pages/Report'
 import { VoiceGuide } from './pages/VoiceGuide'
 import { Welcome } from './pages/Welcome'
-import { getExperience, setExperience } from './state/experience'
 import { advanceClock, dismissToast, logout, resetClock, resetDemo, startSync, useStore, type Source } from './state/store'
 
 const SIX_HOURS = 6 * 60 * 60 * 1000
@@ -20,9 +19,9 @@ function pageFromHash(): Page {
   if (hash.startsWith('#/report')) return 'report'
   if (hash.startsWith('#/login')) return 'login'
   if (hash.startsWith('#/voice')) return 'voice'
-  if (hash.startsWith('#/welcome')) return 'welcome'
-  // The map is what opens first, once the person has said they want it. Until then they are asked.
-  return getExperience() === 'map' ? 'map' : 'welcome'
+  if (hash.startsWith('#/map')) return 'map'
+  // The address with no page (or #/ or #/welcome) always opens the welcome choice. Nothing is remembered.
+  return 'welcome'
 }
 
 function usePage(): Page {
@@ -143,13 +142,13 @@ function App() {
   return (
     <div className="app">
       <header className="topbar">
-        <a className="brand" href="#/">
+        <a className="brand" href="#/map">
           <img src="/favicon.svg" alt="" width={28} height={28} />
           <span className="brand-name">REACHABLE</span>
           <span className="brand-tag">Know before you go</span>
         </a>
         <nav className="nav" aria-label="Pages">
-          <a href="#/" aria-current={page === 'map' ? 'page' : undefined}>
+          <a href="#/map" aria-current={page === 'map' ? 'page' : undefined}>
             <MapIcon /> Campus map
           </a>
           <a href="#/report" aria-current={page === 'report' ? 'page' : undefined}>
@@ -168,9 +167,7 @@ function App() {
         {page === 'admin' ? <Admin /> : page === 'login' ? <Login /> : page === 'report' ? <Report /> : <Home />}
       </main>
       <p className="experience-link">
-        <a href="#/welcome" onClick={() => setExperience(null)}>
-          Change how you use REACHABLE
-        </a>
+        <a href="#/welcome">Change how you use REACHABLE</a>
       </p>
       <DemoFooter />
       <Toast />

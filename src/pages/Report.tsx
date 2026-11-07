@@ -86,7 +86,7 @@ export function Report() {
               firstStep={2}
               onSubmitted={() => {
                 notify('Report saved. Routes updated.')
-                window.location.hash = '#/'
+                window.location.hash = '#/map'
               }}
             />
           </div>
